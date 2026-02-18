@@ -1,124 +1,124 @@
-# Suivi de projet
+# Project Tracking
 
-Ce document permet de consigner les séances, tâches et observations. Il suffit de remplir les sections correspondantes.
+This document is used to record sessions, tasks, and observations. Simply fill in the corresponding sections.
 
-## Informations générales
+## General Information
 
-- **Nom du projet : Beyond Pixel** 
-- **Responsable : à définir** 
-- **Date de début : 11/02** 
-- **Date de fin prévue : pas vraiment de fin, on avance en améliorant** 
+- **Project Name: Beyond Pixel**  
+- **Project Lead: To be defined**  
+- **Start Date: 11/02**  
+- **Expected End Date: No fixed end date, continuous improvement approach**  
 
 ---
 
-## Planification
+## Planning
 
 <table>
   <thead>
     <tr>
-      <th>Tâche</th>
-      <th>Responsable</th>
-      <th>Détails</th>
-      <th>Date (prévue)</th>
-      <th>Date (réalisée)</th>
+      <th>Task</th>
+      <th>Responsible</th>
+      <th>Details</th>
+      <th>Date (Planned)</th>
+      <th>Date (Completed)</th>
     </tr>
   </thead>
   <tbody>
     <tr>
-      <td>Phase collective ML/DL & ressources</td>
-      <td>Tous</td>
-      <td>Lecture de livres/ressources (statlearning, scikit-learn, d2l, PyTorch video, Hugging Face)</td>
-      <td>18 fév – 1 mars</td>
+      <td>Collective ML/DL Phase & Resources</td>
+      <td>All</td>
+      <td>Reading books/resources (StatLearning, scikit-learn, D2L, PyTorch videos, Hugging Face)</td>
+      <td>Feb 18 – Mar 1</td>
       <td></td>
     </tr>
     <tr>
-      <td>Analyse exploratoire Open-I Chest X-ray</td>
-      <td>Tous</td>
-      <td>Nettoyage, statistiques, distribution, qualité des données + revue littérature</td>
-      <td>16 mars – 29 mars</td>
+      <td>Exploratory Analysis – Open-I Chest X-ray</td>
+      <td>All</td>
+      <td>Cleaning, statistics, distribution, data quality analysis + literature review</td>
+      <td>Mar 16 – Mar 29</td>
       <td></td>
     </tr>
     <tr>
-      <td>Construction pipeline ML</td>
-      <td>Membre 1</td>
-      <td>Téléchargement dataset, preprocessing, entraînement, évaluation, interprétation</td>
-      <td>30 mars – 25 avril</td>
+      <td>ML Pipeline Construction</td>
+      <td>Member 1</td>
+      <td>Dataset download, preprocessing, training, evaluation, interpretation</td>
+      <td>Mar 30 – Apr 25</td>
       <td></td>
     </tr>
     <tr>
-      <td>Modèles vision (classification)</td>
-      <td>Membre 2</td>
-      <td>Prétraitement images, augmentation, validation, transfert learning</td>
-      <td>30 mars – 25 avril</td>
+      <td>Vision Models (Classification)</td>
+      <td>Member 2</td>
+      <td>Image preprocessing, augmentation, validation, transfer learning</td>
+      <td>Mar 30 – Apr 25</td>
       <td></td>
     </tr>
     <tr>
-      <td>Extraction NLP des rapports</td>
-      <td>Membre 3</td>
-      <td>Tokenisation, extraction d'information, modèles de langage</td>
-      <td>30 mars – 25 avril</td>
+      <td>NLP Report Extraction</td>
+      <td>Member 3</td>
+      <td>Tokenization, information extraction, language models</td>
+      <td>Mar 30 – Apr 25</td>
       <td></td>
     </tr>
     <tr>
-      <td>Aide & résilience</td>
-      <td>Membres 4 & 5</td>
-      <td>Soutien aux autres membres en cas de problèmes, démarrage de fusion</td>
-      <td>30 mars – 25 avril</td>
+      <td>Support & Resilience</td>
+      <td>Members 4 & 5</td>
+      <td>Support other members in case of issues, begin integration work</td>
+      <td>Mar 30 – Apr 25</td>
       <td></td>
     </tr>
     <tr>
-      <td>Finalisation indépendants + fusion</td>
-      <td>Tous</td>
-      <td>Finaliser chacun son sujet puis débuter l'intégration multimodale</td>
-      <td>26 avril – 14 mai</td>
+      <td>Individual Finalization + Fusion</td>
+      <td>All</td>
+      <td>Finalize individual components, start multimodal integration</td>
+      <td>Apr 26 – May 14</td>
       <td></td>
     </tr>
     <tr>
-      <td>Évaluation & interprétation</td>
-      <td>Tous</td>
-      <td>Comparaison systématique des modèles, métriques, explainabilité, relation vis/text</td>
-      <td>15 mai – 11 juin</td>
+      <td>Evaluation & Interpretation</td>
+      <td>All</td>
+      <td>Systematic model comparison, metrics, explainability, vision/text relationship</td>
+      <td>May 15 – Jun 11</td>
       <td></td>
     </tr>
     <tr>
-      <td>Présentation finale</td>
-      <td>Tous</td>
-      <td>Préparer slides, répétitions, retours du superviseur</td>
-      <td>11 juin – fin</td>
+      <td>Final Presentation</td>
+      <td>All</td>
+      <td>Prepare slides, rehearsals, supervisor feedback</td>
+      <td>Jun 11 – End</td>
       <td></td>
     </tr>
   </tbody>
 </table>
 
-> Ajoutez autant de lignes que nécessaire.
+> Add as many rows as necessary.
 
 ---
 
-## Checklist des objectifs
+## Objectives Checklist
 
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Objectifs</title>
+  <title>Objectives</title>
 </head>
 <body>
 
-  <h3>Objectifs à court terme (rapide à réaliser)</h3>
+  <h3>Short-term Objectives (quick wins)</h3>
   <ul>
-    <li><label><input type="checkbox"> [] Essayer de faire correspondre l'image au problème</label></li> 
+    <li><label><input type="checkbox"> Try to match the image to the problem</label></li> 
     <li><label><input type="checkbox"> </label></li>
     <li><label><input type="checkbox"> </label></li>
   </ul>
 
-  <h3>Objectifs atteignables (engagement raisonnable)</h3>
+  <h3>Achievable Objectives (reasonable commitment)</h3>
   <ul>
     <li><label><input type="checkbox"> </label></li>
     <li><label><input type="checkbox"> </label></li>
     <li><label><input type="checkbox"> </label></li>
   </ul>
 
-  <h3>Objectifs plus approfondis (long terme / complexe)</h3>
+  <h3>Advanced Objectives (long-term / complex)</h3>
   <ul>
     <li><label><input type="checkbox"> </label></li>
     <li><label><input type="checkbox"> </label></li>
@@ -130,38 +130,36 @@ Ce document permet de consigner les séances, tâches et observations. Il suffit
 
 ---
 
-## Suivi des séances
+## Session Tracking
 
-Les séances sont listées par date.
+Sessions are listed by date.
 
 ### [Date]
 
-**Objectifs de la séance :**
+**Session Objectives:**
 
 - 
 
-**Activités réalisées :**
+**Activities Completed:**
 
 - 
 
-**Décisions / Résultats :**
+**Decisions / Results:**
 
 - 
 
-**Prochaines étapes pour la séance prochaine :**
+**Next Steps for the Following Session:**
 
 - 
 
 ---
 
-Nouvelle séance
+New Session
 
 ---
 
-## Remarques générales
+## General Remarks
 
-- 
-
+-  
 
 ---
-
