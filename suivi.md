@@ -106,7 +106,7 @@ Ce document permet de consigner les séances, tâches et observations. Il suffit
 
   <h3>Objectifs à court terme (rapide à réaliser)</h3>
   <ul>
-    <li><label><input type="checkbox"> </label></li>
+    <li><label><input type="checkbox"> Essayer de faire correspondre l'image au problème</label></li> 
     <li><label><input type="checkbox"> </label></li>
     <li><label><input type="checkbox"> </label></li>
   </ul>
