@@ -54,6 +54,8 @@ gantt
     Final Presentation (All)  :present, 2025-06-11, 2025-06-30
 ```
 
+![alt text](image.png)
+
 ## Planning
 
 <table>
