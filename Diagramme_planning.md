@@ -1,18 +1,5 @@
 ```mermaid
-%%{init: {
-    "theme": "default",
-    "themeVariables": {
-        "fontSize": "9px",
-        "fontFamily": "Inter",
-        "textColor": "#e0e0e0",
-        "taskTextColor": "#ffffff",
-        "taskColor": "#3a7bd5",
-        "taskBorderColor": "#2a5fa8",
-        "lineColor": "#90caf9",
-        "sectionBkgColor": "#0d47a1",
-        "sectionBkgColor2": "#0a3d91"
-    }
-}}%%
+
 
 gantt
     title Project Timeline – Multimodal X‑Ray Diagnosis
@@ -20,29 +7,33 @@ gantt
     axisFormat  %b %d
 
     section Preparation
-    Resources                 :a1, 2025-02-18, 2025-03-01
-    Planning Check (All)      :a2, 2025-03-02, 1d
+    Resources                 :a1, 2025-02-18, 2025-03-7
+    Planning Check (All)      :a2, 2025-03-08, 1d
 
-    section Week 1–2: Cleaning & Analysis
-    Training (M1)             :m1a, 2025-03-03, 2025-03-15
-    Training (M2)             :m2a, 2025-03-03, 2025-03-15
-    Training (M3)             :m3a, 2025-03-03, 2025-03-15
-    Training (M4)             :m4a, 2025-03-03, 2025-03-15
-    Training (M5)             :m5a, 2025-03-03, 2025-03-15
+    section Week 1 Training Data
+    Training (M1)             :m1a, 2025-03-09, 2025-03-15
+    Training (M2)             :m2a, 2025-03-09, 2025-03-15
+    Training (M3)             :m3a, 2025-03-09, 2025-03-15
+    Training (M4)             :m4a, 2025-03-09, 2025-03-15
+    Training (M5)             :m5a, 2025-03-09, 2025-03-15
 
-    section Week 3–4: Deep Cleaning
-    Raw Data                  :m1b, 2025-03-16, 2025-03-29
-    Image Prep                :m2b, 2025-03-16, 2025-03-29
-    Text Prep                 :m3b, 2025-03-16, 2025-03-29
-    Splits & Repro            :m4b, 2025-03-16, 2025-03-29
-    Pipeline Struct.          :m5b, 2025-03-16, 2025-03-29
+    section Week 2  Data
+    Raw Data__                  :m1b, 2025-03-16, 2025-03-23
+    Image Prep                :m2b, 2025-03-16, 2025-03-23
+    Text Prep__                   :m3b, 2025-03-16, 2025-03-23
+    Splits & Repro            :m4b, 2025-03-16, 2025-03-23
+    Pipeline Struct.          :m5b, 2025-03-16, 2025-03-23
+
+    section Week 3 Training machine learning
+    Raw Data__                  :m1b, 2025-03-24, 2025-03-30
+    Image Prep                :m2b, 2025-03-24, 2025-03-30
+    Text Prep__                :m3b, 2025-03-24, 2025-03-30
+    Splits & Repro            :m4b, 2025-03-24, 2025-03-30
+    Pipeline Struct.          :m5b, 2025-03-24, 2025-03-30
 
     section Core Dev
-    ML Pipeline (M1)          :m1c, 2025-03-30, 2025-04-25
-    Vision Models (M2)        :m2c, 2025-03-30, 2025-04-25
-    NLP Reports (M3)          :m3c, 2025-03-30, 2025-04-25
-    Support (M4)              :m4c, 2025-03-30, 2025-04-25
-    Support (M5)              :m5c, 2025-03-30, 2025-04-25
+    computer vision models         :m1c, 2025-03-31, 2025-04-25
+    extract information       :m2c, 2025-03-31, 2025-04-25
 
     section Fusion
     Fusion Phase (All)        :fusion, 2025-04-26, 2025-05-14
@@ -54,7 +45,6 @@ gantt
     Final Presentation (All)  :present, 2025-06-11, 2025-06-30
 ```
 
-![alt text](image.png)
 
 ## Planning
 
@@ -161,44 +151,23 @@ gantt
       <td></td>
     </tr>
     <tr>
-      <td>ML Pipeline Construction</td>
-      <td>Member 1</td>
-      <td>Dataset download, preprocessing, training, evaluation, interpretation</td>
+      <td>Implement computer vision models</td>
+      <td>Member 1, 2, 4</td>
+      <td>Implement computer vision models for medical image classification (data preprocessing, augmentation, and validation strategies). Investigate transfer learning methods.</td>
       <td>Mar 30 – Apr 25</td>
       <td></td>
     </tr>
     <tr>
-      <td>Vision Models (Classification)</td>
-      <td>Member 2</td>
-      <td>Image preprocessing, augmentation, validation, transfer learning</td>
-      <td>Mar 30 – Apr 25</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>NLP Report Extraction</td>
-      <td>Member 3</td>
-      <td>Tokenization, information extraction, language models</td>
-      <td>Mar 30 – Apr 25</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>Support & Resilience</td>
-      <td>Members 4</td>
-      <td>Support other members in case of issues, begin integration work</td>
-      <td>Mar 30 – Apr 25</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>Support & Resilience</td>
-      <td>Members 5</td>
-      <td>Support other members in case of issues, begin integration work</td>
+      <td>extract information</td>
+      <td>Member 3, 5</td>
+      <td>Use NLP methods to extract information from medical reports.</td>
       <td>Mar 30 – Apr 25</td>
       <td></td>
     </tr>
     <tr>
       <td>Individual Finalization + Fusion</td>
       <td>All</td>
-      <td>Finalize individual components, start multimodal integration</td>
+      <td>Finalize individual components, start multimodal integration. everyone will participate because everyone needs to implement his precedent task to the fusion</td>
       <td>Apr 26 – May 14</td>
       <td></td>
     </tr>
