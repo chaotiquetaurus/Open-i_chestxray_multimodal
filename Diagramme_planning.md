@@ -1,4 +1,19 @@
 ```mermaid
+%%{init: { 
+    "theme": "default",
+    "themeVariables": { 
+        "fontSize": "9px",
+        "fontFamily": "Inter",
+        "textColor": "#e0e0e0",
+        "taskTextColor": "#ffffff",
+        "taskColor": "#3a7bd5",
+        "taskBorderColor": "#2a5fa8",
+        "lineColor": "#90caf9",
+        "sectionBkgColor": "#0d47a1",
+        "sectionBkgColor2": "#0a3d91"
+    }
+}}%%
+
 
 gantt
     title Project Timeline – Multimodal X‑Ray Diagnosis
@@ -6,22 +21,22 @@ gantt
     axisFormat  %b %d
 
     section Preparation
-    ML/DL Resources (All)            :a1, 2025-02-18, 2025-03-01
+    Resources            :a1, 2025-02-18, 2025-03-01
     Planning Check (All)             :a2, 2025-03-02, 1d
 
     section Week 1–2: Cleaning & Analysis
-    Raw Data – Training (M1)         :m1a, 2025-03-03, 2025-03-15
-    Image Prep – Training (M2)       :m2a, 2025-03-03, 2025-03-15
-    Text Prep – Training (M3)        :m3a, 2025-03-03, 2025-03-15
-    Splits & Repro – Training (M4)   :m4a, 2025-03-03, 2025-03-15
-    Pipeline Struct. – Training (M5) :m5a, 2025-03-03, 2025-03-15
+    Training (M1)         :m1a, 2025-03-03, 2025-03-15
+    Training (M2)       :m2a, 2025-03-03, 2025-03-15
+    Training (M3)        :m3a, 2025-03-03, 2025-03-15
+    Training (M4)   :m4a, 2025-03-03, 2025-03-15
+    Training (M5) :m5a, 2025-03-03, 2025-03-15
 
     section Week 3–4: Deep Cleaning
-    Raw Data – Work (M1)             :m1b, 2025-03-16, 2025-03-29
-    Image Prep – Work (M2)           :m2b, 2025-03-16, 2025-03-29
-    Text Prep – Work (M3)            :m3b, 2025-03-16, 2025-03-29
-    Splits & Repro – Work (M4)       :m4b, 2025-03-16, 2025-03-29
-    Pipeline Struct. – Work (M5)     :m5b, 2025-03-16, 2025-03-29
+    Raw Data             :m1b, 2025-03-16, 2025-03-29
+    Image Prep           :m2b, 2025-03-16, 2025-03-29
+    Text Prep            :m3b, 2025-03-16, 2025-03-29
+    Splits & Repro       :m4b, 2025-03-16, 2025-03-29
+    Pipeline Struct.     :m5b, 2025-03-16, 2025-03-29
 
     section Core Dev
     ML Pipeline (M1)                 :m1c, 2025-03-30, 2025-04-25
