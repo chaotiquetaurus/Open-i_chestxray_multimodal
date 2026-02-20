@@ -1,15 +1,4 @@
 ```mermaid
-%%{init: { 
-    "theme": "dark",
-    "themeVariables": { 
-        "fontSize": "9px",
-        "fontFamily": "Inter",
-        "textColor": "#222",
-        "taskTextColor": "#ffffff",
-        "taskColor": "#3a7bd5",
-        "taskBorderColor": "#2a5fa8"
-    }
-}}%%
 
 gantt
     title Project Timeline – Multimodal X‑Ray Diagnosis
