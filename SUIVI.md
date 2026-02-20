@@ -29,22 +29,22 @@ This document is used to record sessions, tasks, and observations. Simply fill i
   <h3>Short-term Objectives (quick wins)</h3>
   <ul>
     <li><label><input type="checkbox"> Try to match the image to the problem</label></li> 
-    <li><label><input type="checkbox"> Learn and anderstanding all the  </label></li>
+    <li><label><input type="checkbox">learn and understand how all  libraries work </label></li>
     <li><label><input type="checkbox"> </label></li>
   </ul>
 
   <h3>Achievable Objectives (reasonable commitment)</h3>
   <ul>
-    <li><label><input type="checkbox">Create the </label></li>
-    <li><label><input type="checkbox"> </label></li>
-    <li><label><input type="checkbox"> </label></li>
+    <li><label><input type="checkbox">to be defined after the learning phase  </label></li>
+    <li><label><input type="checkbox">to be defined </label></li>
+    <li><label><input type="checkbox">to be defined </label></li>
   </ul>
 
   <h3>Advanced Objectives (long-term / complex)</h3>
   <ul>
-    <li><label><input type="checkbox"> </label></li>
-    <li><label><input type="checkbox"> </label></li>
-    <li><label><input type="checkbox"> </label></li>
+    <li><label><input type="checkbox">to be defined </label></li>
+    <li><label><input type="checkbox">to be defined </label></li>
+    <li><label><input type="checkbox">to be defined </label></li>
   </ul>
 
 </body>
