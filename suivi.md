@@ -52,6 +52,24 @@ This document is used to record sessions, tasks, and observations. Simply fill i
 
 Sessions are listed by date.
 
+### [20/02/26]
+
+**Session Objectives:**
+
+Compléter le planning et se fixer des objectif pour chacun, d'abord le court terme
+
+**Activities Completed:**
+
+- 
+
+**Decisions / Results:**
+
+- 
+
+**Next Steps for the Following Session:**
+
+- 
+
 ### [Date]
 
 **Session Objectives:**
