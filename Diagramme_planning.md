@@ -1,4 +1,16 @@
 ```mermaid
+%%{init: { 
+    "theme": "dark",
+    "themeVariables": { 
+        "fontSize": "9px",
+        "fontFamily": "Inter",
+        "textColor": "#222",
+        "taskTextColor": "#ffffff",
+        "taskColor": "#3a7bd5",
+        "taskBorderColor": "#2a5fa8"
+    }
+}}%%
+
 gantt
     title Project Timeline – Multimodal X‑Ray Diagnosis
     dateFormat  YYYY-MM-DD
@@ -70,35 +82,42 @@ gantt
       <td>Formation Raw Data Manager</td>
       <td>Member 1</td>
       <td>Organize label, Download dataset, perform raw cleaning, run global statistics, produce a first data quality report</td>
-      <td>Mar 3 – Mar 15</td>
+      <td>Mar 3 – Mar 14</td>
       <td></td>
     </tr>
     <tr>
       <td>Formation Image Preprocessing and image quality</td>
       <td>Member 2</td>
       <td>Organize label, Inspect image quality, compute image statistics : brightness histogram, pixel intensity distribution, image size distribution, Start designing the image preprocessing function</td>
-      <td>Mar 3 – Mar 15</td>
+      <td>Mar 3 – Mar 14</td>
       <td></td>
     </tr>
     <tr>
       <td>Formation Image Preprocessing and image quality</td>
       <td>Member 3</td>
       <td>Organize label, Inspect radiology report, clean text, compute text statistics : report length distribution, vocab size, term frequencies, identify incomplete ort inconsistent report</td>
-      <td>Mar 3 – Mar 15</td>
+      <td>Mar 3 – Mar 14</td>
       <td></td>
     </tr>
     <tr>
       <td>Formation Split, Distribution and Reproducibility</td>
       <td>Member 4</td>
       <td>Organize label, Analyse label distribution, identify class imbalance, check patient-level consistency prepare the project environment</td>
-      <td>Mar 3 – Mar 15</td>
+      <td>Mar 3 – Mar 14</td>
       <td></td>
     </tr>
     <tr>
       <td>Formation Pipeline Structure and Consistency Checks</td>
       <td>Member 5</td>
       <td>Organize label, Build skeleton of the training pipeline, Define expected intput formats (image tensors, text vectors), Create mock data for testing, start litteratur reviex on multimodal pipelines</td>
-      <td>Mar 3 – Mar 15</td>
+      <td>Mar 3 – Mar 14</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>Check planning</td>
+      <td>All</td>
+      <td>Checking and uptading the planning if necessary</td>
+      <td>Mar 15</td>
       <td></td>
     </tr>
     <tr>
