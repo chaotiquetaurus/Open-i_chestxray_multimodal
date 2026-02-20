@@ -1,13 +1,16 @@
 ```mermaid
 %%{init: { 
-    "theme": "dark",
+    "theme": "default",
     "themeVariables": { 
         "fontSize": "9px",
         "fontFamily": "Inter",
-        "textColor": "#222",
+        "textColor": "#e0e0e0",
         "taskTextColor": "#ffffff",
-        "taskColor": "#3a7bd5",
-        "taskBorderColor": "#2a5fa8"
+        "taskColor": "#1e88e5",
+        "taskBorderColor": "#1565c0",
+        "lineColor": "#90caf9",
+        "sectionBkgColor": "#0d47a1",
+        "sectionBkgColor2": "#0a3d91"
     }
 }}%%
 
