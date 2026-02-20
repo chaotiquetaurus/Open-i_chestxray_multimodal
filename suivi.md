@@ -8,7 +8,11 @@ This document is used to record sessions, tasks, and observations. Simply fill i
 - **Project Lead: To be defined**  
 - **Start Date: 11/02**  
 - **Expected End Date: No fixed end date, continuous improvement approach**  
-
+- **Member 1 : enzo**  
+- **Member 2**  
+- **Member 3**  
+- **Member 3**  
+- **Member 4**  
 ---
 
 
@@ -52,7 +56,7 @@ This document is used to record sessions, tasks, and observations. Simply fill i
 
 Sessions are listed by date.
 
-### [20/02/26]
+### séance 1 [20/02/26]
 
 **Session Objectives:**
 
