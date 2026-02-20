@@ -1,18 +1,4 @@
 ```mermaid
-%%{init: { 
-    "theme": "default",
-    "themeVariables": { 
-        "fontSize": "9px",
-        "fontFamily": "Inter",
-        "textColor": "#e0e0e0",
-        "taskTextColor": "#ffffff",
-        "taskColor": "#3a7bd5",
-        "taskBorderColor": "#2a5fa8",
-        "lineColor": "#90caf9",
-        "sectionBkgColor": "#0d47a1",
-        "sectionBkgColor2": "#0a3d91"
-    }
-}}%%
 
 
 gantt
