@@ -16,7 +16,7 @@ This document is used to record sessions, tasks, and observations. Simply fill i
 ---
 
 
-## Objectives Checklist
+## Objectives Checklist  
 
 <!DOCTYPE html>
 <html lang="en">
