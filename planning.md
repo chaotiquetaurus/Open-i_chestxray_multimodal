@@ -22,13 +22,12 @@ Learning about Machine Learning and Deep Learning Libraries; Resources we will u
 
 ## 30 March - 25 April:
 
--Member 1: Build the initial version of the machine learning pipeline: (From data acquisition (downloading and dataset) through preprocessing/cleaning, model training, evaluation, and interpretation.)
+-Member 1, Member 2, and member 4: Implement computer vision models for medical image classification (data preprocessing, augmentation, and validation strategies). Investigate transfer learning methods.
 
--Member 2: Implement computer vision models for medical image classification (data preprocessing, augmentation, and validation strategies). Investigate transfer learning methods.
+-Member 3 and Member 5:  Use NLP methods to extract information from medical reports.
 
--Member 3: Use NLP methods to extract information from medical reports.
+-Then, we will build the initial version of the machine learning pipeline
 
--Member 4 and 5 will help the other members based on how challenging the task is.
 
 ---> Having two members to help the others can allow us to solve the problem of having a sick member.
 
