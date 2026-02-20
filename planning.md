@@ -196,7 +196,7 @@ gantt
     <tr>
       <td>Individual Finalization + Fusion</td>
       <td>All</td>
-      <td>Finalize individual components, start multimodal integration. everyone will participate because everyone needs to implement his precedent task to the fusion</td>
+      <td>Finalize individual components, start multimodal integration. everyone will participate because everyone needs to implement his precedent task to the fusion. In this part, we'll also study codes and system that already work for what we want to do and observe how it works - this will be the first days of the multi-fusion.</td>
       <td>May 5 – May 24</td>
       <td></td>
     </tr>
