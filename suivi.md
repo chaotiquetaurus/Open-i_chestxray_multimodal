@@ -64,17 +64,36 @@ Compléter le planning et se fixer des objectif pour chacun, d'abord le court te
 
 **Activities Completed:**
 
-- 
+- Mise en place d'un planning qui devrait être efficace. Le manque de connaissance mais surtout le fait de ne pas savoir à quel point nous serons capable de faire les choses ( problème aussi mentionné par notre encadrant qui nous a conseillé de faire les choses petit à petit quitte à ne pas aller jusqu'au bout) nous a poussé à faire un planning très prograssive avec finalement peu de détails sur la pratique pure de ce que nous allons faire. Dans la théorie et les idées, le planning est cependant très précis.
 
 **Decisions / Results:**
 
-- 
+- Planning.md
 
 **Next Steps for the Following Session:**
 
-- 
+- Consulter toute la docu donnée par notre encadrant
 
-### [Date]
+### Séance 2 [23/02/26]
+
+**Session Objectives:**
+
+- Commencer à regarder la docu
+
+**Activities Completed:**
+
+Cette séance chacun s'est concentré sur là où ils voulaient commencer, au final tout devra être fait:
+- enzo : commencé à regardé la video de 24h... sur pytorch, une deeplearning library.
+
+**Decisions / Results:**
+
+- enzo : vidéo pas finis mais bien entamé
+
+**Next Steps for the Following Session:**
+
+- enzo : poursuivre la vidéo mais aussi regardé certains point du livre présenté : "https://scikit-learn.org/stable/" sur le machin learning
+
+### Séance 3 [//26]
 
 **Session Objectives:**
 
@@ -91,6 +110,7 @@ Compléter le planning et se fixer des objectif pour chacun, d'abord le court te
 **Next Steps for the Following Session:**
 
 - 
+
 
 ---
 
