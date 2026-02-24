@@ -97,16 +97,19 @@ In this session, each person focused on where they wanted to start. Overall, eve
 - Enzo: Started watching the 24-hour video on PyTorch, a deep learning library.
 - Djouhoud : started to learn about the MONAI project
 - Aziz: Started watching videos about scikit-learn library
+- Hugo: A lot about Numpy and panda library. Started learning about basic ML, and application with scikit-learn, through https://inria.github.io/scikit-learn-mooc/index.html. 
 
 **Decisions / Results:**
 
 - Enzo: Video not finished but well underway
 - Aziz: understood the basics of linear models, SVMs, and SGD.
+- Hugo : Understood the basic of linear models. I now am able to manipulate panda and numpy a bit better. Started through scikit, to learn how to analyze a basic (here 2d) datasets.
 
 **Next Steps for the Following Session:**
 
 - Enzo: Continue the video and also review certain points from the presented book: "https://scikit-learn.org/stable/" on machine learning
 - Aziz: continue reading more about the scikit-learn library
+- Hugo: continue with basic Ml and scikit.
 
 ### Session 3 [//26]
 
