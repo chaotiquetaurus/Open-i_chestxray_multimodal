@@ -4,19 +4,19 @@ This document is used to record sessions, tasks, and observations. Simply fill i
 
 ## General Information
 
-- **Project Name: Beyond Pixel**  
-- **Project Lead: AHMED SAID Djouhoud**  
-- **Start Date: 11/02**  
-- **Expected End Date: No fixed end date, continuous improvement approach**  
-- **Member 1 : enzo**  
-- **Member 2 : Djouhoud**  
-- **Member 3 : Hugo**  
-- **Member 3 : Aziz**  
-- **Member 4 : Elias**  
+- **Project Name: Beyond Pixel**
+- **Project Lead: AHMED SAID Djouhoud**
+- **Start Date: 11/02**
+- **Expected End Date: No fixed end date, continuous improvement approach**
+- **Member 1 : enzo**
+- **Member 2 : Djouhoud**
+- **Member 3 : Hugo**
+- **Member 3 : Aziz**
+- **Member 4 : Elias**
+
 ---
 
-
-## Objectives Checklist  
+## Objectives Checklist
 
 <!DOCTYPE html>
 <html lang="en">
@@ -64,8 +64,7 @@ Complete the planning and set objectives for each member of the team, starting w
 
 **Activities Completed:**
 
-
-- Planning 
+- Planning
 - Division of tasks
 
 **Decisions / Results:**
@@ -74,7 +73,7 @@ Complete the planning and set objectives for each member of the team, starting w
 
 **Next Steps for the Following Session:**
 
-- Learning about Machine Learning and Deep Learning Libraries 
+- Learning about Machine Learning and Deep Learning Libraries
 - Setting up a planning schedule that should be effective. The lack of knowledge but especially the fact of not knowing to what extent we will be capable of doing things (a problem also mentioned by our supervisor who advised us to do things little by little even if we don't go all the way) pushed us to create a very progressive planning with ultimately few details on the pure practice of what we will do. In theory and ideas, the planning is however very precise.
 
 **Decisions / Results:**
@@ -85,7 +84,6 @@ Complete the planning and set objectives for each member of the team, starting w
 
 - Review all the documentation provided by our supervisor
 
-
 ### Session 2 [23/02/26]
 
 **Session Objectives:**
@@ -95,35 +93,38 @@ Complete the planning and set objectives for each member of the team, starting w
 **Activities Completed:**
 
 In this session, each person focused on where they wanted to start. Overall, everything will need to be completed:
+
 - Enzo: Started watching the 24-hour video on PyTorch, a deep learning library.
-- Djouhoud : started to learn about the MONAI project 
+- Djouhoud : started to learn about the MONAI project
+- Aziz: Started watching videos about scikit-learn library
 
 **Decisions / Results:**
 
 - Enzo: Video not finished but well underway
+- Aziz: understood the basics of linear models, SVMs, and SGD.
 
 **Next Steps for the Following Session:**
 
 - Enzo: Continue the video and also review certain points from the presented book: "https://scikit-learn.org/stable/" on machine learning
+- Aziz: continue reading more about the scikit-learn library
 
 ### Session 3 [//26]
 
 **Session Objectives:**
 
-- 
+-
 
 **Activities Completed:**
 
-- 
+-
 
 **Decisions / Results:**
 
-- 
+-
 
 **Next Steps for the Following Session:**
 
-- 
-
+-
 
 ---
 
@@ -133,6 +134,6 @@ New Session
 
 ## General Remarks
 
--  
+-
 
 ---
