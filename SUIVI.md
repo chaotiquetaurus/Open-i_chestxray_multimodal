@@ -111,7 +111,9 @@ In this session, each person focused on where they wanted to start. Overall, eve
 - Aziz: continue reading more about the scikit-learn library
 - Hugo: continue with basic Ml and scikit.
 
-### Session 3 — Text Classification Baseline
+### Vacation — Text Classification Baseline
+
+#### Hugo
 
 **Session Objectives:**
 
