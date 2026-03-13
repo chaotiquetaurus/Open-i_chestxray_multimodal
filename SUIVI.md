@@ -111,49 +111,41 @@ In this session, each person focused on where they wanted to start. Overall, eve
 - Aziz: continue reading more about the scikit-learn library
 - Hugo: continue with basic Ml and scikit.
 
-### Vacation — Text Classification Baseline
-
-#### Hugo
-
-**Session Objectives:**
-
-- Build a first baseline model for classifying radiology reports from the Open-I dataset
-
-**Activities Completed:**
-
-- Built an end-to-end text classification pipeline in `Text classification/first_phases.ipynb`
-
-**Pipeline:**
-
-1. **Data loading**: Parsed 2314 XML radiology reports (indication + findings fields) and loaded 12 pathology labels using TorchXRayVision's Open-I loader.
-2. **Preprocessing**: Removed anonymization tokens (XXXX, year, old), filtered stopwords and punctuation, then lemmatized using spaCy (`en_core_web_sm`).
-3. **TF-IDF vectorization**: Vectorized indication and findings separately (max 2500 features each, min_df=2), concatenated into a single sparse matrix (1074 features, 98% sparsity).
-4. **Binary classification (Normal vs. Pathology)**: Logistic regression with L1 regularization (C=0.83), tuned via RandomizedSearchCV. **AUC = 0.96**, accuracy = 0.90 (vs. 0.70 dummy baseline).
-5. **Multi-label classification (12 pathologies)**: OneVsRest logistic regression with ElasticNet (C=5.4, l1_ratio=0.8). **Macro AUC = 0.91**. Per-pathology AUC ranges from 0.70 (Emphysema) to 0.98 (Granuloma).
-
-**Results Analysis:**
-
-- Pathologies with specific vocabulary (Granuloma, Atelectasis, Nodule) score very well (AUC > 0.94) because TF-IDF directly captures discriminant keywords like "granuloma", "atelectasis", "nodule".
-- Pathologies with subtle or shared vocabulary (Emphysema AUC=0.70, Pneumonia AUC=0.81) perform worse — their reports use generic terms ("dyspnea", "opacity") shared across multiple conditions.
-- Macro F1 = 0.53 is low: the model struggles with rare classes (Edema: 3 test samples, Nodule: 6) and produces many false positives when it lacks confident signal.
-- The t-SNE visualization shows poor separation between Normal and Pathological reports in TF-IDF space, confirming the feature representation is limited.
-
-**Why We Need BERT / Deep Learning:**
-
-- **Negation handling**: TF-IDF treats "no pneumonia" and "pneumonia" identically — both contribute to the pneumonia keyword. A contextual model like BERT understands negation and would correctly distinguish these cases.
-- **Semantic understanding**: "Cardiac silhouette is enlarged" means Cardiomegaly, but TF-IDF only sees individual words. BERT captures the full meaning of phrases.
-- **Rare class performance**: With few training examples, TF-IDF features are too sparse to learn reliable patterns. Pre-trained language models bring prior medical/language knowledge that helps generalize from fewer examples.
-- **Multi-word expressions**: Discriminant terms like "pleural effusion", "calcified granuloma", or "interstitial markings" are split by TF-IDF into independent tokens. BERT processes them as coherent concepts.
-
-**Next Steps for the Following Session:**
-
-- Implement a BERT-based text classifier (fine-tuning on the same dataset) to compare against this TF-IDF baseline
-- Explore image-based classification to start the multimodal approach
-
----
-
 ## General Remarks
 
 -
+
+---
+
+### Session 3 [13/03/26]
+
+**Activities Completed before session:**
+
+- Enzo: Already done before (vacation): Video DL finisehd. Write a first DL model with a dataset already existed.
+- Hugo: Built an end-to-end text classification pipeline in `Text classification/first_phases.ipynb`
+
+**Session Objectives:**
+
+- Enzo: Start the traitement of the data
+- Hugo: Implement a BERT-based text classifier (fine-tuning on the same dataset) to compare against this TF-IDF baseline
+
+**Activities Completed:**
+
+In this session, each person focused on where they wanted to start. Overall, everything will need to be completed:
+
+- Enzo: (focus on png images only): create our custom dataset, sorting images into test/train folders based on labels. Start normalizing the images
+
+
+**Decisions / Results:**
+
+- Enzo: organization of the dataset
+
+
+**Next Steps for the Following Session:**
+
+- Building a first model to train
+
+## General Remarks
+
 
 ---
