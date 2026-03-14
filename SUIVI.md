@@ -128,6 +128,8 @@ In this session, each person focused on where they wanted to start. Overall, eve
 
 - Enzo: Start the traitement of the data
 - Hugo: Implement a BERT-based text classifier (fine-tuning on the same dataset) to compare against this TF-IDF baseline
+- 
+- Djouhoud: Djouhoud: use of the DICOM dataset API, start the treatment of the DICOM images 
 
 **Activities Completed:**
 
@@ -139,6 +141,7 @@ In this session, each person focused on where they wanted to start. Overall, eve
 **Decisions / Results:**
 
 - Enzo: organization of the dataset
+- djouhoud : focus on the dicom images 
 
 
 **Next Steps for the Following Session:**
