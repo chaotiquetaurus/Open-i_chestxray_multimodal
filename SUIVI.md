@@ -123,6 +123,7 @@ In this session, each person focused on where they wanted to start. Overall, eve
 
 - Enzo: Already done before (vacation): Video DL finisehd. Write a first DL model with a dataset already existed.
 - Hugo: Built an end-to-end text classification pipeline in `Text classification/first_phases.ipynb`
+- Djouhoud: Djouhoud: use of the DICOM dataset API, start the treatment of the DICOM images 
 -Aziz: Worked on the learning material.
 **Session Objectives:**
 
@@ -140,6 +141,7 @@ In this session, each person focused on where they wanted to start. Overall, eve
 **Decisions / Results:**
 
 - Enzo: organization of the dataset
+- djouhoud : focus on the dicom images 
 
 
 **Next Steps for the Following Session:**
