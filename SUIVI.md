@@ -128,7 +128,6 @@ In this session, each person focused on where they wanted to start. Overall, eve
 
 - Enzo: Start the traitement of the data
 - Hugo: Implement a BERT-based text classifier (fine-tuning on the same dataset) to compare against this TF-IDF baseline
-- Aziz: Preprocessing data
 
 **Activities Completed:**
 
@@ -141,7 +140,7 @@ In this session, each person focused on where they wanted to start. Overall, eve
 **Decisions / Results:**
 
 - Enzo: organization of the dataset
-- Aziz: CSV file created and pushed to main branch
+
 
 **Next Steps for the Following Session:**
 
