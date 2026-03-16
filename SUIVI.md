@@ -123,29 +123,31 @@ In this session, each person focused on where they wanted to start. Overall, eve
 
 - Enzo: Already done before (vacation): Video DL finisehd. Write a first DL model with a dataset already existed.
 - Hugo: Built an end-to-end text classification pipeline in `Text classification/first_phases.ipynb`
-
+-Aziz: Worked on the learning material.
 **Session Objectives:**
 
 - Enzo: Start the traitement of the data
 - Hugo: Implement a BERT-based text classifier (fine-tuning on the same dataset) to compare against this TF-IDF baseline
+- Aziz: Preprocessing data
 
 **Activities Completed:**
 
 In this session, each person focused on where they wanted to start. Overall, everything will need to be completed:
 
 - Enzo: (focus on png images only): create our custom dataset, sorting images into test/train folders based on labels. Start normalizing the images
+-Aziz: Created a dataset where he linked the images to their respective XML files. He also added in the dataset hugo labels which scores the patient on 12 different diseases. `image_preprocess/merged_df_meta.csv`
 
 
 **Decisions / Results:**
 
 - Enzo: organization of the dataset
-
+- Aziz: CSV file created and pushed to main branch
 
 **Next Steps for the Following Session:**
 
 - Building a first model to train
 
 ## General Remarks
-
+-Hugo label classification method is not great and it has room for improvement: in fact, it assigned NaN values to more than 2000 rows.
 
 ---
