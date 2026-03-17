@@ -123,7 +123,8 @@ In this session, each person focused on where they wanted to start. Overall, eve
 
 - Enzo: Already done before (vacation): Video DL finisehd. Write a first DL model with a dataset already existed.
 - Hugo: Built an end-to-end text classification pipeline in `Text classification/first_phases.ipynb`
-
+- Djouhoud: Djouhoud: use of the DICOM dataset API, start the treatment of the DICOM images 
+-Aziz: Worked on the learning material.
 **Session Objectives:**
 
 - Enzo: Start the traitement of the data
@@ -134,11 +135,13 @@ In this session, each person focused on where they wanted to start. Overall, eve
 In this session, each person focused on where they wanted to start. Overall, everything will need to be completed:
 
 - Enzo: (focus on png images only): create our custom dataset, sorting images into test/train folders based on labels. Start normalizing the images
+-Aziz: Created a dataset where he linked the images to their respective XML files. He also added in the dataset hugo labels which scores the patient on 12 different diseases. `image_preprocess/merged_df_meta.csv`
 
 
 **Decisions / Results:**
 
 - Enzo: organization of the dataset
+- djouhoud : focus on the dicom images 
 
 
 **Next Steps for the Following Session:**
@@ -146,6 +149,6 @@ In this session, each person focused on where they wanted to start. Overall, eve
 - Building a first model to train
 
 ## General Remarks
-
+-Hugo label classification method is not great and it has room for improvement: in fact, it assigned NaN values to more than 2000 rows.
 
 ---
