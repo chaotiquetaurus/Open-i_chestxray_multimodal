@@ -87,28 +87,65 @@ MESH_MAP = {
 }
 
 
-# ── Parsing XML → une ligne par image ────────────────────────────────────────
+# ── Parsing XML → une ligne par image + une ligne par rapport ────────────────
 def parse_xml_dir(xml_dir):
-    samples = []
+    image_samples = []
+    report_samples = []
     for filepath in glob.glob(os.path.join(xml_dir, "*.xml")):
         tree = ET.parse(filepath)
         root = tree.getroot()
+
+        # XML UID
+        uid_node = root.find("uId")
+        xml_uid = uid_node.attrib.get("id", "") if uid_node is not None else ""
 
         # MeSH labels (major + automatic)
         labels_major = [n.text.lower() for n in root.findall(".//MeSH/major") if n.text]
         labels_auto  = [n.text.lower() for n in root.findall(".//MeSH/automatic") if n.text]
         all_labels   = "|".join(np.unique(labels_major + labels_auto))
 
-        # One row per parentImage (= per image in the CSV)
+        # Abstract sections
+        comparison = ""
+        indication = ""
+        findings   = ""
+        impression = ""
+        for abstract in root.findall(".//Abstract/AbstractText"):
+            label = abstract.attrib.get("Label", "").upper()
+            text  = abstract.text or ""
+            if label == "COMPARISON":
+                comparison = text
+            elif label == "INDICATION":
+                indication = text
+            elif label == "FINDINGS":
+                findings = text
+            elif label == "IMPRESSION":
+                impression = text
+
+        # Collect image ids for this report
+        image_ids = []
         for img in root.findall(".//parentImage"):
             img_id = img.attrib.get("id", "")
             if img_id:
-                samples.append({
+                image_ids.append(img_id + ".png")
+                image_samples.append({
                     "image_id": img_id + ".png",
+                    "xml_uid": xml_uid,
                     "mesh_all": all_labels,
                 })
 
-    return pd.DataFrame(samples)
+        # One row per report
+        report_samples.append({
+            "xml_uid": xml_uid,
+            "comparison": comparison,
+            "indication": indication,
+            "findings": findings,
+            "impression": impression,
+            "mesh_all": all_labels,
+            "image_ids": "|".join(image_ids),
+            "num_images": len(image_ids),
+        })
+
+    return pd.DataFrame(image_samples), pd.DataFrame(report_samples)
 
 
 # ── Labellisation ────────────────────────────────────────────────────────────
@@ -122,7 +159,24 @@ def label_from_mesh(mesh_df):
     labels_df = pd.DataFrame(labels, index=mesh_df.index)
     labels_df["Normal"] = (labels_df[list(MESH_MAP.keys())].sum(axis=1) == 0).astype(int)
     labels_df.insert(0, "image_id", mesh_df["image_id"].values)
+    labels_df.insert(1, "xml_uid", mesh_df["xml_uid"].values)
     return labels_df
+
+
+# ── Labellisation pour les rapports ──────────────────────────────────────────
+def label_reports_from_mesh(report_df):
+    labels = {}
+    for pathology, keywords in MESH_MAP.items():
+        pattern = "|".join([re.escape(k) for k in keywords])
+        mask = report_df["mesh_all"].str.contains(pattern, case=False, na=False, regex=True)
+        labels[pathology] = mask.values.astype(int)
+
+    labels_df = pd.DataFrame(labels, index=report_df.index)
+    labels_df["Normal"] = (labels_df[list(MESH_MAP.keys())].sum(axis=1) == 0).astype(int)
+
+    report_out = report_df[["xml_uid", "comparison", "indication", "findings",
+                             "impression", "image_ids", "num_images"]].copy()
+    return pd.concat([report_out, labels_df], axis=1)
 
 
 # ── Pipeline ─────────────────────────────────────────────────────────────────
@@ -130,13 +184,16 @@ if __name__ == "__main__":
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     XML_DIR  = os.path.join(BASE_DIR, "NLMCXR_reports", "ecgen-radiology")
     CSV_PATH = os.path.join(BASE_DIR, "Datasets", "new_dataset.csv")
-    OUT_PATH = os.path.join(BASE_DIR, "dataset_labeled.csv")
+    OUT_IMAGE_PATH  = os.path.join(BASE_DIR, "dataset_labeled.csv")
+    OUT_REPORT_PATH = os.path.join(BASE_DIR, "dataset_reports.csv")
 
     print("Parsing XMLs...")
-    mesh_df = parse_xml_dir(XML_DIR)
+    mesh_df, report_df = parse_xml_dir(XML_DIR)
     print(f"  {len(mesh_df)} images parsées depuis les XML")
+    print(f"  {len(report_df)} rapports XML parsés")
 
-    print("Labellisation...")
+    # ── Image-level CSV ──────────────────────────────────────────────────
+    print("Labellisation (images)...")
     labels_df = label_from_mesh(mesh_df)
 
     print("Merge avec le dataset...")
@@ -146,13 +203,24 @@ if __name__ == "__main__":
     df_final = df.merge(labels_df, on="image_id", how="left")
 
     LABEL_COLS = list(MESH_MAP.keys()) + ["Normal"]
-    # Images sans XML correspondant → 0
     df_final[LABEL_COLS] = df_final[LABEL_COLS].fillna(0).astype(int)
+    df_final["xml_uid"] = df_final["xml_uid"].fillna("")
 
     print(f"\nMatched: {df_final[LABEL_COLS[0]].notna().sum()} / {len(df_final)}")
-    print("\nLabel distribution:")
+    print("\nLabel distribution (images):")
     print(df_final[LABEL_COLS].sum().sort_values(ascending=False).to_string())
-    print(f"\nShape final: {df_final.shape}")
+    print(f"\nShape final (images): {df_final.shape}")
 
-    df_final.to_csv(OUT_PATH, index=False)
-    print(f"\nSauvegardé : {OUT_PATH}")
+    df_final.to_csv(OUT_IMAGE_PATH, index=False)
+    print(f"Sauvegardé : {OUT_IMAGE_PATH}")
+
+    # ── Report-level CSV ─────────────────────────────────────────────────
+    print("\nLabellisation (rapports)...")
+    report_labeled = label_reports_from_mesh(report_df)
+
+    print(f"\nLabel distribution (rapports):")
+    print(report_labeled[LABEL_COLS].sum().sort_values(ascending=False).to_string())
+    print(f"\nShape final (rapports): {report_labeled.shape}")
+
+    report_labeled.to_csv(OUT_REPORT_PATH, index=False)
+    print(f"Sauvegardé : {OUT_REPORT_PATH}")
