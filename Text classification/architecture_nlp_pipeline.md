@@ -165,7 +165,7 @@ BioClinicalBERT (pré-entraîné MIMIC-III) + classifier head neuf :
 - **`cross_validate()`** — StratifiedKFold multi-label adapté aux pathologies rares.
 - **`hyperparam_search()`** — RandomizedSearchCV avec subsample pour le search, refit sur le train complet.
 
-> ⚠️ `l1_ratio` ne doit apparaître dans la grille qu'avec la pénalité `elasticnet`. Le mélanger avec `l1`/`l2` fait échouer tous les fits.
+> l1_ratio` ne doit apparaître dans la grille qu'avec la pénalité `elasticnet`. Le mélanger avec `l1`/`l2` fait échouer tous les fits.
 
 ### 4.2 TorchTrainer
 
