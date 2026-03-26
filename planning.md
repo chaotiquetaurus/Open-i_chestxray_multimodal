@@ -168,7 +168,7 @@ gantt
     <tr>
       <td>Implement computer vision models</td>
       <td>Member 1, 2, 4</td>
-      <td>implement full medical image classification models, integrating preprocessing, augmentation, validation strategies, and transfer learning into a coherent and scalable training pipeline.</td>
+      <td>implement full medical image classification models, integrating preprocessing, augmentation, validation strategies, and transfer learning into a coherent and scalable training pipeline. Implementing : Pytorch lightning pipeline, and finetunning CV model</td>
       <td>Mar 31 – Apr 24</td>
       <td></td>
     </tr>
