@@ -1,5 +1,7 @@
 # Chest X-Ray Multi-Label Disease Classification
 
+This documentation corresponds to the model made in the file `cv_model_01.ipynb`
+
 Multi-label classification of 21 chest conditions from X-ray images using DenseNet-121 transfer learning.
 
 ## Dataset
