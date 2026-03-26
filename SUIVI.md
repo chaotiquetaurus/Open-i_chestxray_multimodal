@@ -176,7 +176,7 @@ In this session, each person focused on where they wanted to start. Overall, eve
 ## General Remarks
 
 
-### Session 3 [27/03/26]
+### Session 3 [26/03/26]
 
 **Activities Completed before session:**
 
@@ -184,17 +184,16 @@ In this session, each person focused on where they wanted to start. Overall, eve
 
 **Session Objectives:**
 
-
+-Discuss the work each one did so far
 
 **Activities Completed:**
 
+-Aziz: Built the first version of a computer vision model for multi-label classification: Fine-tuned a DenseNet-121 on the png dataset (7470 images). Achieved a score of 0.78 AUC
 
 **Decisions / Results:**
 
-
-
 **Next Steps for the Following Session:**
-
-
+Aziz: -Work on improving the CV model through changing the hyper-parameters
+-Fine-tuning an open source model already trained on medical images like the HF model: `codewithdark/vit-chest-xray`
 ## General Remarks
 
