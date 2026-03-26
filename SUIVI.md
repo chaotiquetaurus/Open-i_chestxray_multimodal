@@ -189,11 +189,16 @@ In this session, each person focused on where they wanted to start. Overall, eve
 **Activities Completed:**
 
 -Aziz: Built the first version of a computer vision model for multi-label classification: Fine-tuned a DenseNet-121 on the png dataset (7470 images). Achieved a score of 0.78 AUC
+The model can be found in `image classification (png)\cv_model_01.ipynb` with the documentation in `image classification (png)\readme.md`
 
 **Decisions / Results:**
 
 **Next Steps for the Following Session:**
-Aziz: -Work on improving the CV model through changing the hyper-parameters
+
+Aziz: 
+
+-Work on improving the CV model through changing the hyper-parameters;
+
 -Fine-tuning an open source model already trained on medical images like the HF model: `codewithdark/vit-chest-xray`
 ## General Remarks
 
