@@ -1,53 +1,69 @@
-# 🫁 Projet Classification Chest X-Ray
+# 🫁 Preprocessing DICOM + XML
 
-Classification d'images chest X-ray avec PyTorch en utilisant vos données DICOM.
+Pipeline de preprocessing pour linking DICOM ↔ PNG ↔ XML et enrichissement métadonnées médicales.
 
 ## 📁 Structure
 
 ```
 projet_dicom/
-├── fragment_data_set/          # Vos données DICOM
-├── processed_data/             # Données traitées
-├── models/                     # Modèles sauvegardés
-├── runs/                       # Logs et historiques
-├── extract_labels.py           # Extraction des métadonnées
-├── config.py                   # Configuration du projet
-├── dataset.py                  # Dataset PyTorch
-├── models_arch.py              # Architectures (ResNet18, SimpleCNN)
-├── trainer.py                  # Trainer pour entraînement
-├── main.py                     # Script principal
-├── requirements.txt            # Dépendances
-└── dicom_labels.csv            # Métadonnées extraites
+├── fragment_data_set/              # Données DICOM brutes
+├── NLMCXR_reports/                 # Rapports médicaux XML
+├── dicom_preprocessed/             # DICOM multifenêtres (générés)
+├── extract_labels.py               # Extraction métadonnées DICOM
+├── enrich_dataset_with_xml.py      # Enrichissement dataset XML
+├── config.py                       # Configuration
+├── requirements.txt                # Dépendances
+└── README.md                       # Ce fichier
 ```
 
-## 🚀 Démarrage rapide
+## 🚀 Installation & Utilisation
 
 ### 1. Installer les dépendances
+
 ```bash
 pip install -r requirements.txt
 ```
 
-### 2. Extraire les métadonnées DICOM
+### 2. Extraire étiquettes DICOM
+
 ```bash
 python extract_labels.py
 ```
 
-### 3. Entraîner le modèle
+Génère `dicom_labels.csv` avec métadonnées des fichiers DICOM.
+
+### 3. Enrichir le dataset avec XML
+
 ```bash
-python main.py
+python enrich_dataset_with_xml.py
 ```
 
-## 📊 Métadonnées actuelles
+Génère `dataset_labeled_enriched.csv` avec:
+- ✅ Linking PNG ↔ XML via pattern `IM-XXXX-YYYY`
+- ✅ Métadonnées texte: indication, findings, impression, comparison
+- ✅ MeSH tags diagnostiques
+- ✅ Identification fichiers DICOM correspondants
 
-✅ **12 images** de **5 patients** détectées
-- Format: CR (Radiographies)
-- Dimensions: 2828x2320 ou 2991x2992 pixels
-- Labels: À définir dans `main.py`
+## 📊 Fichiers générés
 
-## 🎯 À personnaliser
+| Fichier | Contenu |
+|---------|---------|
+| `dicom_labels.csv` | Métadonnées DICOM extraites |
+| `dataset_labeled_enriched.csv` | Dataset enrichi: 7470 images × 39 colonnes |
+| `dicom_preprocessed/` | DICOM multifenêtres (à implémenter) |
 
-1. **Labels de classification** dans `main.py`:
-   ```python
+## 🔧 Configuration
+
+`config.py`:
+- `IMAGE_SIZE`: Résolution preprocessing (défaut: 256×256)
+- `LUNG_WINDOW`: Center=-150, Width=400
+- `MEDIASTINAL_WINDOW`: Center=150, Width=400
+
+## ⚙️ Prochaines étapes
+
+- [ ] Créer script preprocessing DICOM multifenêtres
+- [ ] Valider qualité des images resizées
+- [ ] Analyser distribution des pathologies
    labels_dict[patient_id] = classe  # 0=Normal, 1=Pathologie, etc.
    ```
 

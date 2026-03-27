@@ -1,12 +1,6 @@
 pydicom==2.4.3
-torch==2.5.1
-torchvision==0.20.1
 numpy==1.26.2
 pandas==2.1.1
 opencv-python==4.8.0.74
-Pillow==10.0.0
 scipy==1.11.2
 tqdm==4.67.0
-scikit-learn==1.5.2
-matplotlib==3.8.0
-tensorboard==2.18.0
