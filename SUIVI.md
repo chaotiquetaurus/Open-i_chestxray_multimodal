@@ -152,3 +152,49 @@ In this session, each person focused on where they wanted to start. Overall, eve
 -Hugo label classification method is not great and it has room for improvement: in fact, it assigned NaN values to more than 2000 rows.
 
 ---
+
+### Session 3 [16/03/26]
+
+**Activities Completed before session:**
+
+- meeting with Nikolas
+
+**Session Objectives:**
+
+
+
+**Activities Completed:**
+
+
+**Decisions / Results:**
+
+
+
+**Next Steps for the Following Session:**
+
+
+## General Remarks
+
+
+### Session 3 [27/03/26]
+
+**Activities Completed before session:**
+
+- meeting with Nikolas
+
+**Session Objectives:**
+
+
+
+**Activities Completed:**
+
+
+**Decisions / Results:**
+
+
+
+**Next Steps for the Following Session:**
+
+
+## General Remarks
+
