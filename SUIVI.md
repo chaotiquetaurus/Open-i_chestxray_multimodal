@@ -176,20 +176,23 @@ In this session, each person focused on where they wanted to start. Overall, eve
 ## General Remarks
 
 
-### Session 3 [26/03/26]
+### Session 3 [27/03/26]
 
 **Activities Completed before session:**
 
-- meeting with Nikolas
 
 **Session Objectives:**
 
+
 -Discuss the work each one did so far
+Enzo - Complete the model from start to finish and strive to be efficient when working on these models.
 
 **Activities Completed:**
 
 -Aziz: Built the first version of a computer vision model for multi-label classification: Fine-tuned a DenseNet-121 on the png dataset (7470 images). Achieved a score of 0.78 AUC
 The model can be found in `image classification (png)\cv_model_01.ipynb` with the documentation in `image classification (png)\readme.md`
+Enzo - The model we created works, but it’s not very efficient, so we’re going to switch to a more optimized model: we’ll take a look at PyTorch 
+Enzo - Transfer it as a python file so it can more easily be used (can be found in image classification (png)\own created model) and also work on the structure itseld (OO)
 
 **Decisions / Results:**
 
