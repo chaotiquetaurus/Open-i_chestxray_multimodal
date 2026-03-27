@@ -205,3 +205,24 @@ Aziz:
 -Fine-tuning an open source model already trained on medical images like the HF model: `codewithdark/vit-chest-xray`
 ## General Remarks
 
+
+
+**Djouhoud**
+**Dataset Enrichment:**
+  - Built `enrich_dataset_with_xml.py` to match DICOM files with XML reports
+  - Achieved 100% matching on fragment dataset (5 DICOM files linked to CSV data)
+  - Output: `dataset_labeled_enriched.csv`
+  - 
+**DICOM Multi-Window Preprocessing:**
+  - Implemented `preprocessing_dicom_multiwindow.py` - production script
+  - Concept: Transform 16-bit DICOM to RGB 3-channel PNG encoding 3 medical windows:
+    - **Canal R (Red):** Lungs window - parenchyme pulmonaire
+    - **Canal G (Green):** Mediastinum window - cœur et structures
+    - **Canal B (Blue):** Bone window - structures osseuses
+  - Automatic window adaptation based on pixel range
+  - Fragment test results: 10/10 DICOM successfully processed (100% success rate)
+  - Output: `preprocessed_images_multiwindow/` folder with PNG RGB 3-channel files
+  - Documentation: `README_PREPROCESSING.md`
+**Next Steps for the Following Session:**
+
+- Scale preprocessing to 7000 DICOM images on Google Colab
