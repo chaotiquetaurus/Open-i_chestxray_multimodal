@@ -128,7 +128,7 @@ In this session, each person focused on where they wanted to start. Overall, eve
 **Session Objectives:**
 
 - Enzo: Start the traitement of the data
-- Hugo: Implement a BERT-based text classifier (fine-tuning on the same dataset) to compare against this TF-IDF baseline
+- Hugo: Document myself about a BERT-based text classifier (fine-tuning on the same dataset) to compare against this TF-IDF baseline
 
 **Activities Completed:**
 
@@ -136,7 +136,7 @@ In this session, each person focused on where they wanted to start. Overall, eve
 
 - Enzo: (focus on png images only): create our custom dataset, sorting images into test/train folders based on labels. Start normalizing the images
 -Aziz: Created a dataset where he linked the images to their respective XML files. He also added in the dataset hugo labels which scores the patient on 12 different diseases. `image_preprocess/merged_df_meta.csv`
-
+- Hugo : try working on bert classifier 
 
 **Decisions / Results:**
 
@@ -161,17 +161,17 @@ In this session, each person focused on where they wanted to start. Overall, eve
 
 **Session Objectives:**
 
-
+Finishing a complete Labeliser : Mapping Mesh-->target deases
 
 **Activities Completed:**
-
+- Hugo : Found on the dataset website an official mapping (in the form of a dictionnary)
 
 **Decisions / Results:**
 
-
+- Hugo : The labeliser work way better (4995/5000 results mapped), however 21 target deases (not 14 or 5 like the model that we aim to beat). Among these deases some have very little data to be trained on. 
 
 **Next Steps for the Following Session:**
-
+-Everyone : thinking about how we are going to solve the problem of the very few deases.
 
 ## General Remarks
 
@@ -191,8 +191,10 @@ Enzo - Complete the model from start to finish and strive to be efficient when w
 
 -Aziz: Built the first version of a computer vision model for multi-label classification: Fine-tuned a DenseNet-121 on the png dataset (7470 images). Achieved a score of 0.78 AUC
 The model can be found in `image classification (png)\cv_model_01.ipynb` with the documentation in `image classification (png)\readme.md`
-Enzo - The model we created works, but it’s not very efficient, so we’re going to switch to a more optimized model: we’ll take a look at PyTorch 
+-Enzo - The model we created works, but it’s not very efficient, so we’re going to switch to a more optimized model: we’ll take a look at PyTorch 
 Enzo - Transfer it as a python file so it can more easily be used (can be found in image classification (png)\own created model) and also work on the structure itseld (OO)
+-Hugo : finalising the implementation of a deeplearning pytorch classifier on tf-idf data.
+-Hugo : begin the work on fine-tunning bert type architecture pretrained on medical data.
 
 **Decisions / Results:**
 
