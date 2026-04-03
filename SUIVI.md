@@ -28,22 +28,31 @@ This document is used to record sessions, tasks, and observations. Simply fill i
 
   <h3>Short-term Objectives (quick wins)</h3>
   <ul>
-    <li><label><input type="checkbox"> Try to match the image to the problem</label></li> 
+    <li><label><input type="checkbox"> Understand the project goal and the</label></li> 
     <li><label><input type="checkbox">learn and understand how all  libraries work </label></li>
-    <li><label><input type="checkbox"> </label></li>
+    <li><label><input type="checkbox"> Set up the working environment (Git structure, folders, notebooks) </label></li>
+    <li><label><input type="checkbox"> Split learning topics: PyTorch, MONAI, scikit-learn, NumPy, pandas </label></li>
+    <li><label><input type="checkbox">Read the documentation provided by the supervisor </label></li>
+
   </ul>
 
   <h3>Achievable Objectives (reasonable commitment)</h3>
   <ul>
     <li><label><input type="checkbox">to be defined after the learning phase  </label></li>
-    <li><label><input type="checkbox">to be defined </label></li>
-    <li><label><input type="checkbox">to be defined </label></li>
+    <li><label><input type="checkbox">Build a clean dataset (match images with labels, handle NaN, normalize) </label></li>
+    <li><label><input type="checkbox">Implement a first baseline model for image classification </label></li>
+    <li><label><input type="checkbox">Build or Fine-tune a pretrained model </label></li>
+    <li><label><input type="checkbox">Organize the code into reusable modules / scripts </label></li>
+    <li><label><input type="checkbox">Document the current pipeline (preprocessing → model → evaluation) </label></li>
+    <li><label><input type="checkbox"> Work with DICOM images using MONAI in a more advanced way</label></li>
+    <li><label><input type="checkbox"> Explore multimodal models (image + text)</label></li>
   </ul>
 
   <h3>Advanced Objectives (long-term / complex)</h3>
   <ul>
     <li><label><input type="checkbox">to be defined </label></li>
-    <li><label><input type="checkbox">to be defined </label></li>
+    <li><label><input type="checkbox">Perform advanced hyperparameter optimization (Optuna, Ray Tune) </label></li>
+    <li><label><input type="checkbox">Compare multiple architectures and write an in-depth analysis </label></li>
     <li><label><input type="checkbox">to be defined </label></li>
   </ul>
 
@@ -128,7 +137,7 @@ In this session, each person focused on where they wanted to start. Overall, eve
 **Session Objectives:**
 
 - Enzo: Start the traitement of the data
-- Hugo: Document myself about a BERT-based text classifier (fine-tuning on the same dataset) to compare against this TF-IDF baseline
+- Hugo: Implement a BERT-based text classifier (fine-tuning on the same dataset) to compare against this TF-IDF baseline
 
 **Activities Completed:**
 
@@ -136,7 +145,7 @@ In this session, each person focused on where they wanted to start. Overall, eve
 
 - Enzo: (focus on png images only): create our custom dataset, sorting images into test/train folders based on labels. Start normalizing the images
 -Aziz: Created a dataset where he linked the images to their respective XML files. He also added in the dataset hugo labels which scores the patient on 12 different diseases. `image_preprocess/merged_df_meta.csv`
-- Hugo : try working on bert classifier 
+
 
 **Decisions / Results:**
 
@@ -150,10 +159,11 @@ In this session, each person focused on where they wanted to start. Overall, eve
 
 ## General Remarks
 -Hugo label classification method is not great and it has room for improvement: in fact, it assigned NaN values to more than 2000 rows.
+- enzo : it takes too much time to run the model on all the data, for the next session, we have to find a solution 
 
 ---
 
-### Session 3 [16/03/26]
+### Session 4 [16/03/26]
 
 **Activities Completed before session:**
 
@@ -161,22 +171,22 @@ In this session, each person focused on where they wanted to start. Overall, eve
 
 **Session Objectives:**
 
-Finishing a complete Labeliser : Mapping Mesh-->target deases
+
 
 **Activities Completed:**
-- Hugo : Found on the dataset website an official mapping (in the form of a dictionnary)
+
 
 **Decisions / Results:**
 
-- Hugo : The labeliser work way better (4995/5000 results mapped), however 21 target deases (not 14 or 5 like the model that we aim to beat). Among these deases some have very little data to be trained on. 
+
 
 **Next Steps for the Following Session:**
--Everyone : thinking about how we are going to solve the problem of the very few deases.
+
 
 ## General Remarks
 
 
-### Session 3 [27/03/26]
+### Session 5 [27/03/26]
 
 **Activities Completed before session:**
 
@@ -191,10 +201,8 @@ Enzo - Complete the model from start to finish and strive to be efficient when w
 
 -Aziz: Built the first version of a computer vision model for multi-label classification: Fine-tuned a DenseNet-121 on the png dataset (7470 images). Achieved a score of 0.78 AUC
 The model can be found in `image classification (png)\cv_model_01.ipynb` with the documentation in `image classification (png)\readme.md`
--Enzo - The model we created works, but it’s not very efficient, so we’re going to switch to a more optimized model: we’ll take a look at PyTorch 
+Enzo - The model we created works, but it’s not very efficient, so we’re going to switch to a more optimized model: we’ll take a look at PyTorch 
 Enzo - Transfer it as a python file so it can more easily be used (can be found in image classification (png)\own created model) and also work on the structure itseld (OO)
--Hugo : finalising the implementation of a deeplearning pytorch classifier on tf-idf data.
--Hugo : begin the work on fine-tunning bert type architecture pretrained on medical data.
 
 **Decisions / Results:**
 
@@ -205,26 +213,30 @@ Aziz:
 -Work on improving the CV model through changing the hyper-parameters;
 
 -Fine-tuning an open source model already trained on medical images like the HF model: `codewithdark/vit-chest-xray`
+
+- enzo : ask to the supervisor wether it is a good idea to continu developping our own model or focus on fine-tuning
 ## General Remarks
 
+### Session 6 [03/04/26]
+
+**Activities Completed before session:**
 
 
-**Djouhoud**
-**Dataset Enrichment:**
-  - Built `enrich_dataset_with_xml.py` to match DICOM files with XML reports
-  - Achieved 100% matching on fragment dataset (5 DICOM files linked to CSV data)
-  - Output: `dataset_labeled_enriched.csv`
-  - 
-**DICOM Multi-Window Preprocessing:**
-  - Implemented `preprocessing_dicom_multiwindow.py` - production script
-  - Concept: Transform 16-bit DICOM to RGB 3-channel PNG encoding 3 medical windows:
-    - **Canal R (Red):** Lungs window - parenchyme pulmonaire
-    - **Canal G (Green):** Mediastinum window - cœur et structures
-    - **Canal B (Blue):** Bone window - structures osseuses
-  - Automatic window adaptation based on pixel range
-  - Fragment test results: 10/10 DICOM successfully processed (100% success rate)
-  - Output: `preprocessed_images_multiwindow/` folder with PNG RGB 3-channel files
-  - Documentation: `README_PREPROCESSING.md`
+**Session Objectives:**
+
+
+- Developing and improving our own model in an effort to create something that runs in a reasonable amount of time and works reasonably well. For now, the focus is primarily on simply optimizing the model to achieve satisfactory results.
+
+**Activities Completed:**
+
+- enzo : the model has been improved
+
+**Decisions / Results:**
+
 **Next Steps for the Following Session:**
 
-- Scale preprocessing to 7000 DICOM images on Google Colab
+- enzo : the model now needs to be optimize in a deeper way 
+
+
+
+
