@@ -7,14 +7,14 @@ Dataset : Indiana University Chest X-ray Collection (~3 955 rapports)
 
 ## 1. Vue d'ensemble
 
-L'architecture est organisée en **quatre couches** indépendantes. Le pipeline suit deux blocs expérimentaux : TF-IDF + Régression Logistique (Bloc 1) puis TF-IDF + MLP PyTorch (Bloc 2).
+L'architecture est organisée en **quatre couches** indépendantes. Le pipeline suit trois blocs expérimentaux : TF-IDF + Régression Logistique (Bloc 1), TF-IDF + MLP PyTorch (Bloc 2), puis BERT custom pré-entraîné + classifieur (Bloc 3).
 
 | Couche | Responsabilité | Classes principales |
 |--------|---------------|---------------------|
-| Data Layer | Chargement, labellisation, préparation | `XMLLoader`, `LabelMapper`, `TFIDFVectorizer`, `NlpDataModule` |
-| Model Layer | Définition des modèles | `SklearnMultiLabel`, `nn.Sequential` (MLP) |
-| Training Layer | Entraînement et optimisation | `SklearnTrainer`, `train_with_early_stopping()` |
-| Evaluation | Métriques et visualisation | `evaluate_model()` |
+| Data Layer | Chargement, labellisation, préparation | `XMLLoader`, `LabelMapper`, `TFIDFVectorizer`, `NlpDataModule`, `build_tokenizer`, `MLMDataset`, `LabelDataset` |
+| Model Layer | Définition des modèles | `SklearnMultiLabel`, `nn.Sequential` (MLP), `Encoder`, `BERTForMLM`, `Classifier` |
+| Training Layer | Entraînement et optimisation | `SklearnTrainer`, `train_with_early_stopping()`, `pretrain.py` (MLM), `finetune.py`, `LitClassifier` (K-fold) |
+| Evaluation | Métriques et visualisation | `evaluate_model()`, évaluation intégrée dans `finetune.py` et `kfold.py` |
 
 ### Diagramme d'architecture
 
@@ -58,6 +58,24 @@ graph LR
 
     SKTrainer -->|"résultats"| Evaluator
     TorchTrainer -->|"résultats"| Evaluator
+
+    subgraph BERT["Bloc 3 — BERT Custom"]
+        direction TB
+        MIMIC["MIMIC-CXR\n---\n~227k rapports\n(pré-entraînement)"]
+        BPETok["BPE Tokenizer\n---\nbuild_tokenizer()\nvocab=8192\nmax_len=256"]
+        BERTEnc["Encoder\n---\n6 layers × 8 heads\nd=256, d_ff=512\nRoPE + RMSNorm + SiLU"]
+        MLMHead["BERTForMLM\n---\nMLM pré-entraînement\n15% masking"]
+        ClfHead["Classifier\n---\nDropout(0.1) → Linear\n[CLS] pooling"]
+        KFold["LitClassifier\n---\n5-fold CV\nPyTorch Lightning"]
+    end
+
+    MIMIC -->|"textes"| BPETok
+    BPETok -->|"tokenizer.json"| MLMHead
+    MLMHead -->|"bert_pretrained.pt"| BERTEnc
+    XMLLoader -->|"DataFrame"| LabelMapper
+    BERTEnc -->|"encodeur gelable"| ClfHead
+    ClfHead -->|"fine-tuning"| KFold
+    KFold -->|"résultats"| Evaluator
 ```
 
 ---
@@ -97,7 +115,33 @@ Deux `TfidfVectorizer` indépendants, concaténés via `scipy.hstack` :
 
 Résultat effectif : **1 432 features** (après filtrage `min_df=2`).
 
-### 2.5 NlpDataModule (Bloc 2)
+### 2.5 BPE Tokenizer (Bloc 3 — `model.py`)
+
+Tokenizer BPE entraîné from scratch sur les rapports MIMIC-CXR via la bibliothèque HuggingFace `tokenizers` :
+
+- **`build_tokenizer(texts, vocab_size=8192, max_len=256)`** — entraîne un tokenizer BPE avec `ByteLevel` pre-tokenizer.
+- Tokens spéciaux : `[PAD]`, `[UNK]`, `[CLS]`, `[SEP]`, `[MASK]`.
+- Post-processing : insertion automatique de `[CLS]` et `[SEP]` via `TemplateProcessing`.
+- Padding et troncation activés (max_length=256).
+- Sauvegardé en `tokenizer.json` pour réutilisation en fine-tuning.
+
+### 2.6 MLMDataset (Bloc 3 — `model.py`)
+
+Dataset PyTorch pour le pré-entraînement MLM (Masked Language Modeling) :
+
+- Masquage aléatoire de 15% des tokens (hors tokens spéciaux).
+- Stratégie de remplacement : 80% `[MASK]`, 10% token aléatoire, 10% inchangé.
+- Les tokens non masqués reçoivent le label `-100` (ignorés par `cross_entropy`).
+
+### 2.7 LabelDataset (Bloc 3 — `model.py`)
+
+Dataset PyTorch pour le fine-tuning multi-label :
+
+- Encode les textes via le tokenizer pré-entraîné.
+- Labels : tenseur `float` multi-label (vecteur binaire par rapport).
+- `pad_collate()` : collate function avec padding dynamique au max du batch.
+
+### 2.8 NlpDataModule (Bloc 2)
 
 Gère la conversion sparse → tenseurs PyTorch et la création des DataLoaders :
 
@@ -123,7 +167,35 @@ Pipeline `MaxAbsScaler` → `LogisticRegression(solver='saga')`. Optimisation vi
 **Multi-label (21 pathologies) :**
 `OneVsRestClassifier` wrappant la même pipeline. Un classifieur binaire par pathologie avec son propre seuil optimal.
 
-### 3.2 MLP (Bloc 2 — `nn.Sequential`)
+### 3.2 Encoder BERT custom (Bloc 3 — `model.py`)
+
+Encodeur Transformer construit from scratch, inspiré de l'architecture BERT mais avec des composants modernes :
+
+**Composants :**
+
+| Module | Description |
+|--------|------------|
+| `RoPE` | Rotary Position Embedding — encodage positionnel relatif appliqué aux queries et keys, remplace le positional embedding appris classique |
+| `MHA` | Multi-Head Attention — 8 têtes, `scaled_dot_product_attention` (FlashAttention-compatible), avec RoPE |
+| `Block` | Pre-norm Transformer block — `RMSNorm → MHA → résiduel → RMSNorm → FFN(SiLU) → résiduel` |
+| `Encoder` | Stack de 6 `Block`, embedding + norm finale `RMSNorm` |
+
+**Configuration :**
+
+| Paramètre | Valeur |
+|-----------|--------|
+| `d` (dimension) | 256 |
+| `h` (têtes) | 8 |
+| `N` (couches) | 6 |
+| `d_ff` (FFN) | 512 |
+| `V` (vocabulaire) | 8192 |
+| Params total | ~4.9M |
+
+**`BERTForMLM`** — Wrapper pour le pré-entraînement MLM : `Encoder → Linear(d,d) → GELU → RMSNorm → Linear(d,V)`.
+
+**`Classifier`** — Wrapper pour le fine-tuning multi-label : `Encoder → [CLS] pooling → Dropout(0.1) → Linear(d, n_labels)`. Utilise la représentation du token `[CLS]` (position 0) comme embedding de la séquence.
+
+### 3.3 MLP (Bloc 2 — `nn.Sequential`)
 
 **Baseline :** `Linear(1432, 256) → ReLU → Linear(256, 21)` — sans dropout, 10 epochs.
 
@@ -160,6 +232,57 @@ def train_with_early_stopping(model, loss_fn, optimizer, patience=5, max_epochs=
 - Retourne `train_losses`, `val_losses` pour les plots.
 
 **Grid search :** 45 combinaisons (3 lr × 3 hidden × 5 pw_clip), chacune entraînée avec early stopping (max 60 epochs). Évaluation sur le val set (F1 macro + AUC macro). Le meilleur modèle est réentraîné avec patience=10 et max_epochs=100.
+
+### 4.3 Pré-entraînement MLM (Bloc 3 — `pretrain.py`)
+
+Pré-entraînement auto-supervisé de l'encodeur BERT sur les rapports MIMIC-CXR (corpus externe, ~227k rapports) via Masked Language Modeling.
+
+| Paramètre | Valeur |
+|-----------|--------|
+| Dataset | MIMIC-CXR (HuggingFace) |
+| Epochs | 20 |
+| Learning rate | 3e-4 |
+| Batch size | 32 |
+| Optimizer | AdamW (weight_decay=0.01) |
+| Scheduler | CosineAnnealingLR |
+| Gradient clipping | max_norm=1.0 |
+
+**Pipeline :** Entraîne le tokenizer BPE → entraîne `BERTForMLM` → sauvegarde `tokenizer.json` + `bert_pretrained.pt`.
+
+### 4.4 Fine-tuning multi-label (Bloc 3 — `finetune.py`)
+
+Fine-tuning du `Classifier` sur le dataset IU X-Ray avec les poids pré-entraînés. Trois modes de labels :
+
+| Mode | Labels | Description |
+|------|--------|-------------|
+| 5 | Atelectasis, Cardiomegaly, Consolidation, Edema, Effusion | CheXpert competition (benchmark SOTA) |
+| 14 | 14 pathologies NIH | NIH ChestX-ray14 |
+| 21 | Tous les labels IU X-Ray | Incluant Normal |
+
+| Paramètre | Valeur |
+|-----------|--------|
+| Text input | `findings` |
+| Epochs | 30 (max) |
+| Learning rate | 2e-4 |
+| Batch size | 32 |
+| Early stopping | patience=5 |
+| pos_weight | neg/pos clampé à 5 |
+| Freeze encoder | Configurable (`FREEZE_ENCODER`) |
+| Split | 80/20 (train/val) |
+
+### 4.5 K-fold Cross-Validation (Bloc 3 — `kfold.py`)
+
+Validation croisée 5-fold avec PyTorch Lightning pour une évaluation robuste du modèle BERT.
+
+- **`LitClassifier`** — Module PyTorch Lightning wrappant `Classifier` :
+  - `training_step` / `validation_step` : BCEWithLogitsLoss + pos_weight.
+  - `on_validation_epoch_end` : calcul de l'AUC macro sur le fold.
+  - `configure_optimizers` : AdamW + CosineAnnealingLR.
+- **Text input** : concaténation `indication` + `findings` (vs `findings` seul en finetune).
+- **Early stopping** par fold (patience=5 sur `val_loss`).
+- **pos_weight** : neg/pos clampé à 20 (calculé sur les cas pathologiques uniquement).
+- Chaque fold repart d'une copie fraîche de l'encodeur pré-entraîné (`copy.deepcopy`).
+- Les prédictions de tous les folds sont agrégées pour les métriques finales.
 
 ---
 
@@ -223,6 +346,16 @@ Le modèle optimisé améliore légèrement l'AUC macro (+0.004) mais le F1 macr
 
 **Extensibilité** — Un `ImageDataset` (Phase 3) et un `FusionClassifier` (Phase 4+) pourront s'ajouter sans modifier les couches actuelles.
 
+**Pré-entraînement sur MIMIC-CXR** — L'encodeur BERT est pré-entraîné sur un corpus externe (~227k rapports radiologiques) pour apprendre les représentations du domaine médical avant le fine-tuning sur le petit dataset IU X-Ray (~3 955 rapports). Ce transfer learning domain-specific compense la taille limitée du dataset cible.
+
+**RoPE au lieu de positional embeddings appris** — Les Rotary Position Embeddings offrent une meilleure généralisation aux longueurs de séquences variables et n'ajoutent pas de paramètres apprenables.
+
+**RMSNorm + SiLU** — Choix de normalisation et d'activation modernes (style LLaMA) au lieu de LayerNorm + ReLU/GELU classiques, pour une meilleure stabilité d'entraînement.
+
+**Trois modes de labels (5/14/21)** — Permettent de comparer les performances sur des benchmarks standard (CheXpert-5, NIH-14) en plus de l'évaluation complète (21 labels IU X-Ray).
+
+**K-fold CV avec PyTorch Lightning** — Évaluation robuste évitant le biais d'un seul split train/val, avec gestion propre de l'early stopping et du scheduling par fold.
+
 ---
 
 ## 8. Déploiement GPU — Infrastructure Télécom
@@ -260,6 +393,19 @@ Chaque expérience (combinaison d'hyperparamètres) correspond à un job soumis 
 | `NlpDataModule` | Data | Sparse → tenseurs, splits 80/10/10, DataLoaders PyTorch |
 | `SklearnMultiLabel` | Model | OneVsRestClassifier + Pipeline LogisticRegression |
 | `nn.Sequential` (MLP) | Model | Linear→ReLU→Dropout→Linear, BCEWithLogitsLoss + pos_weight |
+| `RoPE` | Model | Rotary Position Embedding pour l'attention |
+| `MHA` | Model | Multi-Head Attention avec RoPE et scaled_dot_product |
+| `Block` | Model | Bloc Transformer pre-norm (RMSNorm + MHA + FFN SiLU) |
+| `Encoder` | Model | Stack de 6 blocs Transformer, d=256, h=8 |
+| `BERTForMLM` | Model | Encoder + tête de prédiction MLM |
+| `Classifier` | Model | Encoder + [CLS] pooling + tête de classification multi-label |
+| `build_tokenizer()` | Data | Entraîne un tokenizer BPE (vocab=8192, ByteLevel) |
+| `MLMDataset` | Data | Dataset MLM avec masquage 15% (80/10/10) |
+| `LabelDataset` | Data | Dataset multi-label pour fine-tuning |
+| `pad_collate()` | Data | Collate function avec padding dynamique |
 | `SklearnTrainer` | Training | Cross-validation, RandomizedSearchCV |
 | `train_with_early_stopping()` | Training | Boucle train/val, early stopping, sauvegarde best.pt |
+| `pretrain.py` | Training | Pré-entraînement MLM sur MIMIC-CXR, produit tokenizer.json + bert_pretrained.pt |
+| `finetune.py` | Training | Fine-tuning multi-label (3 modes : 5/14/21 labels), early stopping |
+| `kfold.py` | Training | 5-fold CV avec PyTorch Lightning, `LitClassifier` |
 | `evaluate_model()` | Evaluation | F1, AUC, Hamming, threshold search, plots |
