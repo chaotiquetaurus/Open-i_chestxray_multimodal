@@ -170,20 +170,19 @@ In this session, each person focused on where they wanted to start. Overall, eve
 - meeting with Nikolas
 
 **Session Objectives:**
-
+-meeting
 
 
 **Activities Completed:**
 
 
 **Decisions / Results:**
+-We decided to continue on our program basicly.
+-enzo need to implement fully the pipeline he beggined
+-aziz try to solve overfittting problem
 
 
 
-**Next Steps for the Following Session:**
-
-
-## General Remarks
 
 
 ### Session 5 [27/03/26]
@@ -203,8 +202,10 @@ Enzo - Complete the model from start to finish and strive to be efficient when w
 The model can be found in `image classification (png)\cv_model_01.ipynb` with the documentation in `image classification (png)\readme.md`
 Enzo - The model we created works, but it’s not very efficient, so we’re going to switch to a more optimized model: we’ll take a look at PyTorch 
 Enzo - Transfer it as a python file so it can more easily be used (can be found in image classification (png)\own created model) and also work on the structure itseld (OO)
+-Hugo : I started building my own bert model to understand better the transformer architectiure. For that i used d2l.ia very good step by step guide to build an attention mecanism and then a (quite modern ! transformer), i implemented (without always understanding everything of course but still) multiheadedattention, Rope, add and rms norme.
 
 **Decisions / Results:**
+-Hugo : I need to clean my repo
 
 **Next Steps for the Following Session:**
 
@@ -220,22 +221,27 @@ Aziz:
 ### Session 6 [03/04/26]
 
 **Activities Completed before session:**
-
+-hugo : continue and finish with the bert classifier
 
 **Session Objectives:**
 
 
 - Developing and improving our own model in an effort to create something that runs in a reasonable amount of time and works reasonably well. For now, the focus is primarily on simply optimizing the model to achieve satisfactory results.
+-engineer the prtrain, find a bigger cxray datasets to pretrain 
 
 **Activities Completed:**
 
 - enzo : the model has been improved
+-hugo : Following once again the very good chap 15 of d2l.ai, i built a pretrain functiun on a portion of MIMICXR datasets (29k)
+-hugo : Fine tuned the model on open-i
 
 **Decisions / Results:**
+-Very very Satisfying result on the bert classifier, i obtain an auc score of .94 which is not so far from the .97 that we aim for. Although my model overfitt because i need to train all the layer during fine-tunning as my model is quite small (5m param/300mfor cxr-bert)
 
 **Next Steps for the Following Session:**
 
 - enzo : the model now needs to be optimize in a deeper way 
+- Hugo : fine-tune CXR-bert (microsoft) and compare with my model 
 
 
 
