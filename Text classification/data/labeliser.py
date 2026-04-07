@@ -181,11 +181,12 @@ def label_reports_from_mesh(report_df):
 
 # ── Pipeline ─────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
-    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    XML_DIR  = os.path.join(BASE_DIR, "NLMCXR_reports", "ecgen-radiology")
-    CSV_PATH = os.path.join(BASE_DIR, "Datasets", "new_dataset.csv")
-    OUT_IMAGE_PATH  = os.path.join(BASE_DIR, "dataset_labeled.csv")
-    OUT_REPORT_PATH = os.path.join(BASE_DIR, "dataset_reports.csv")
+    DATA_DIR  = os.path.dirname(os.path.abspath(__file__))
+    PROJ_ROOT = os.path.dirname(os.path.dirname(DATA_DIR))  # MM-MIA/
+    XML_DIR   = os.path.join(PROJ_ROOT, "labeliser", "NLMCXR_reports", "ecgen-radiology")
+    CSV_PATH  = os.path.join(PROJ_ROOT, "labeliser", "Datasets", "new_dataset.csv")
+    OUT_IMAGE_PATH  = os.path.join(DATA_DIR, "dataset_labeled.csv")
+    OUT_REPORT_PATH = os.path.join(DATA_DIR, "dataset_reports.csv")
 
     print("Parsing XMLs...")
     mesh_df, report_df = parse_xml_dir(XML_DIR)
