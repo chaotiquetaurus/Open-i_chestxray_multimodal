@@ -1,17 +1,29 @@
 """
-╔══════════════════════════════════════════════════════════════╗
-║  ÉTAPE 1 — Pré-entraînement MLM sur MIMIC-CXR (HuggingFace)║
-║                                                              ║
-║  Produit : tokenizer.json, bert_pretrained.pt, mlm_curves.png║
-╚══════════════════════════════════════════════════════════════╝
++==============================================================+
+|  ETAPE 1 -- Pre-entrainement MLM sur MIMIC-CXR (HuggingFace) |
+|                                                                |
+|  Produit : checkpoints/tokenizer.json                         |
+|            checkpoints/bert_pretrained.pt                     |
+|            outputs/mlm_curves.png                             |
++==============================================================+
 """
 
-import random, torch, torch.nn as nn, torch.nn.functional as F, pandas as pd
-import matplotlib.pyplot as plt
+import os, sys, random, torch, torch.nn as nn, torch.nn.functional as F
+import pandas as pd, matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
-from model import BERTForMLM, build_tokenizer, MLMDataset, pad_collate
 
-# ── Config ────────────────────────────────────────────────────────────────
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, ROOT)
+
+from models import BERTForMLM
+from data import build_tokenizer, MLMDataset, pad_collate
+
+CKPT_DIR = os.path.join(ROOT, "checkpoints")
+OUT_DIR  = os.path.join(ROOT, "outputs")
+os.makedirs(CKPT_DIR, exist_ok=True)
+os.makedirs(OUT_DIR, exist_ok=True)
+
+# -- Config ----------------------------------------------------------------
 
 PRETRAIN_PATH = "/content/drive/MyDrive/Colab Notebooks/dataset/mimic_cxr_reports.csv"
 TEXT_COL      = "reports"
@@ -22,7 +34,7 @@ LR     = 3e-4
 BATCH  = 32
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
-# ── Données ───────────────────────────────────────────────────────────────
+# -- Donnees ---------------------------------------------------------------
 
 random.seed(42); torch.manual_seed(42)
 
@@ -30,20 +42,20 @@ df = pd.read_csv(PRETRAIN_PATH)
 texts = df[TEXT_COL].dropna().astype(str).tolist()
 print(f"MIMIC-CXR : {len(texts)} rapports | Device : {DEVICE}")
 
-# ── Tokenizer ─────────────────────────────────────────────────────────────
+# -- Tokenizer -------------------------------------------------------------
 
 tok = build_tokenizer(texts)
 V = tok.get_vocab_size()
 print(f"Vocab     : {V} tokens")
 print(f"Exemple   : {tok.encode(texts[0]).tokens[:12]}...")
-tok.save("tokenizer.json")
+tok.save(os.path.join(CKPT_DIR, "tokenizer.json"))
 
-# ── Modèle ────────────────────────────────────────────────────────────────
+# -- Modele ----------------------------------------------------------------
 
 model = BERTForMLM(V, D, H, N, D_FF).to(DEVICE)
 print(f"Params    : {sum(p.numel() for p in model.parameters()):,}")
 
-# ── Entraînement ──────────────────────────────────────────────────────────
+# -- Entrainement ----------------------------------------------------------
 
 dataset = MLMDataset(texts, tok)
 loader  = DataLoader(dataset, BATCH, shuffle=True, collate_fn=pad_collate)
@@ -77,11 +89,11 @@ for ep in range(1, EPOCHS + 1):
     history["lr"].append(sched.get_last_lr()[0])
     print(f"  Epoch {ep:2d}/{EPOCHS} | loss={avg_loss:.4f} | acc={acc:.1%} | lr={history['lr'][-1]:.1e}")
 
-# ── Sauvegarde ────────────────────────────────────────────────────────────
+# -- Sauvegarde ------------------------------------------------------------
 
-torch.save(model.state_dict(), "bert_pretrained.pt")
+torch.save(model.state_dict(), os.path.join(CKPT_DIR, "bert_pretrained.pt"))
 
-# ── Courbes ───────────────────────────────────────────────────────────────
+# -- Courbes ---------------------------------------------------------------
 
 fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(15, 4))
 
@@ -97,9 +109,9 @@ ax3.plot(history["lr"], "o-", color="tab:green")
 ax3.set(title="Learning Rate", xlabel="Epoch", ylabel="LR")
 ax3.grid(True, alpha=0.3)
 
-fig.suptitle("Pré-entraînement MLM — MIMIC-CXR", fontsize=13, fontweight="bold")
+fig.suptitle("Pre-entrainement MLM -- MIMIC-CXR", fontsize=13, fontweight="bold")
 fig.tight_layout()
-fig.savefig("mlm_curves.png", dpi=150)
+fig.savefig(os.path.join(OUT_DIR, "mlm_curves.png"), dpi=150)
 plt.show()
 
-print("\n✓ Sauvegardé : tokenizer.json, bert_pretrained.pt, mlm_curves.png")
+print(f"\n=> Sauvegarde : checkpoints/tokenizer.json, checkpoints/bert_pretrained.pt, outputs/mlm_curves.png")

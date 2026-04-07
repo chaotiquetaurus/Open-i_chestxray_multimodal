@@ -1,29 +1,40 @@
 """
-╔══════════════════════════════════════════════════════════════╗
-║  kfold.py — 5-fold CV avec PyTorch Lightning                ║
-║                                                              ║
-║  Usage :  %run kfold.py 5                                   ║
-║           %run kfold.py 14                                  ║
-║           %run kfold.py 21                                  ║
-║                                                              ║
-║  Requiert : pip install pytorch-lightning                    ║
-╚══════════════════════════════════════════════════════════════╝
++==============================================================+
+|  kfold.py -- 5-fold CV avec PyTorch Lightning                 |
+|                                                                |
+|  Usage :  python scripts/kfold.py 5                           |
+|           python scripts/kfold.py 14                          |
+|           python scripts/kfold.py 21                          |
+|                                                                |
+|  Requiert : pip install pytorch-lightning                      |
++==============================================================+
 """
 
-import sys, copy, torch, torch.nn as nn
+import os, sys, copy, torch, torch.nn as nn
 import pandas as pd, numpy as np, matplotlib.pyplot as plt
 import pytorch_lightning as pl
 from torch.utils.data import DataLoader, Subset
 from tokenizers import Tokenizer
 from sklearn.model_selection import KFold
 from sklearn.metrics import f1_score, roc_auc_score, classification_report
-from model import BERTForMLM, Classifier, LabelDataset, pad_collate
 
-# ══════════════════════════════════════════════════════════════════════════
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, ROOT)
+
+from models import BERTForMLM, Classifier
+from data import LabelDataset, pad_collate
+
+CKPT_DIR = os.path.join(ROOT, "checkpoints")
+OUT_DIR  = os.path.join(ROOT, "outputs")
+DATA_DIR = os.path.join(ROOT, "data")
+os.makedirs(CKPT_DIR, exist_ok=True)
+os.makedirs(OUT_DIR, exist_ok=True)
+
+# ======================================================================
 #  CONFIG
-# ══════════════════════════════════════════════════════════════════════════
+# ======================================================================
 
-FINETUNE_PATH = "/content/drive/MyDrive/Colab Notebooks/dataset/dataset_reports.csv"
+FINETUNE_PATH = os.path.join(DATA_DIR, "dataset_reports.csv")
 TEXT_COLS  = ["indication", "findings"]
 META_COLS  = {"xml_uid", "indication", "findings", "impression",
               "comparison", "image_ids", "num_images"}
@@ -39,9 +50,9 @@ assert mode in (5, 14, 21)
 D, H, N, D_FF = 256, 8, 6, 512
 MAX_EPOCHS, LR, BATCH, K = 30, 2e-4, 32, 5
 
-# ══════════════════════════════════════════════════════════════════════════
+# ======================================================================
 #  LIGHTNING MODULE
-# ══════════════════════════════════════════════════════════════════════════
+# ======================================================================
 
 class LitClassifier(pl.LightningModule):
     def __init__(self, encoder, n_labels, pos_weight):
@@ -84,9 +95,9 @@ class LitClassifier(pl.LightningModule):
         sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, MAX_EPOCHS)
         return [opt], [sched]
 
-# ══════════════════════════════════════════════════════════════════════════
-#  DONNÉES
-# ══════════════════════════════════════════════════════════════════════════
+# ======================================================================
+#  DONNEES
+# ======================================================================
 
 np.random.seed(42); torch.manual_seed(42)
 
@@ -102,10 +113,11 @@ labels_np = df[label_cols].apply(pd.to_numeric, errors="coerce").fillna(0).value
 mode_name = {5: "CheXpert-5", 14: "NIH-14", 21: "IU-XRay-21"}[mode]
 print(f"{mode_name} | {len(texts)} rapports | {len(label_cols)} labels | {K}-fold CV")
 
-tok = Tokenizer.from_file("tokenizer.json")
+tok = Tokenizer.from_file(os.path.join(CKPT_DIR, "tokenizer.json"))
 V = tok.get_vocab_size()
 bert = BERTForMLM(V, D, H, N, D_FF)
-bert.load_state_dict(torch.load("bert_pretrained.pt", map_location="cpu", weights_only=True))
+bert.load_state_dict(torch.load(os.path.join(CKPT_DIR, "bert_pretrained.pt"),
+                                map_location="cpu", weights_only=True))
 
 # pos_weight
 y_all = torch.tensor(labels_np)
@@ -115,20 +127,20 @@ pos_weight = (neg / pos.clamp(min=1)).clamp(max=20)
 
 full_ds = LabelDataset(texts, labels_np.tolist(), tok)
 
-# ══════════════════════════════════════════════════════════════════════════
+# ======================================================================
 #  K-FOLD
-# ══════════════════════════════════════════════════════════════════════════
+# ======================================================================
 
 kfold = KFold(n_splits=K, shuffle=True, random_state=42)
 all_probs, all_labels = [], []
 
 for fold, (train_idx, val_idx) in enumerate(kfold.split(range(len(full_ds))), 1):
-    print(f"\n{'─'*40}  Fold {fold}/{K}  {'─'*40}")
+    print(f"\n{'-'*40}  Fold {fold}/{K}  {'-'*40}")
 
     train_loader = DataLoader(Subset(full_ds, train_idx), BATCH, shuffle=True,  collate_fn=pad_collate)
     val_loader   = DataLoader(Subset(full_ds, val_idx),   BATCH, collate_fn=pad_collate)
 
-    # Fresh model à chaque fold
+    # Fresh model a chaque fold
     encoder = copy.deepcopy(bert.encoder)
     lit = LitClassifier(encoder, len(label_cols), pos_weight)
 
@@ -142,7 +154,7 @@ for fold, (train_idx, val_idx) in enumerate(kfold.split(range(len(full_ds))), 1)
     )
     trainer.fit(lit, train_loader, val_loader)
 
-    # Collecter les prédictions du fold
+    # Collecter les predictions du fold
     lit.eval()
     fold_probs, fold_labels = [], []
     with torch.no_grad():
@@ -152,9 +164,9 @@ for fold, (train_idx, val_idx) in enumerate(kfold.split(range(len(full_ds))), 1)
     all_probs.append(np.vstack(fold_probs))
     all_labels.append(np.vstack(fold_labels))
 
-# ══════════════════════════════════════════════════════════════════════════
-#  MÉTRIQUES AGRÉGÉES
-# ══════════════════════════════════════════════════════════════════════════
+# ======================================================================
+#  METRIQUES AGREGEES
+# ======================================================================
 
 probs      = np.vstack(all_probs)
 labels_arr = np.vstack(all_labels)
@@ -171,30 +183,30 @@ auc_mac = roc_auc_score(labels_arr[:, valid], probs[:, valid], average='macro')
 auc_per = roc_auc_score(labels_arr[:, valid], probs[:, valid], average=None)
 valid_names = [label_cols[i] for i in valid]
 
-print(f"\n{'═'*55}")
-print(f"  {mode_name} — {K}-fold CV — seuil={best_t:.2f}")
-print(f"{'═'*55}")
+print(f"\n{'='*55}")
+print(f"  {mode_name} -- {K}-fold CV -- seuil={best_t:.2f}")
+print(f"{'='*55}")
 print(f"  F1 macro  : {f1_mac:.4f}")
 print(f"  F1 micro  : {f1_mic:.4f}")
 print(f"  AUC macro : {auc_mac:.4f}")
 
-print(f"\n── AUC par label ──")
+print(f"\n-- AUC par label --")
 for name, auc in sorted(zip(valid_names, auc_per), key=lambda x: x[1], reverse=True):
-    print(f"  {name:25s} {auc:.4f}  {'█' * int(auc * 20)}")
+    print(f"  {name:25s} {auc:.4f}  {'#' * int(auc * 20)}")
 
 display_names = label_cols.copy()
 if mode == 5:
     display_names = [n if n != "Effusion" else "Pleural Effusion" for n in display_names]
 print(f"\n{classification_report(labels_arr, preds, target_names=display_names, zero_division=0)}")
 
-# ── Plot ──────────────────────────────────────────────────────────────────
+# -- Plot --------------------------------------------------------------
 
 fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
 
 names_g = ['F1 macro', 'F1 micro', 'AUC macro']
 vals_g  = [f1_mac, f1_mic, auc_mac]
 bars = ax1.bar(names_g, vals_g, color=['steelblue', 'steelblue', 'coral'])
-ax1.set_ylim(0, 1); ax1.set_title(f'{mode_name} — Métriques globales')
+ax1.set_ylim(0, 1); ax1.set_title(f'{mode_name} -- Metriques globales')
 for bar, val in zip(bars, vals_g):
     ax1.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.01,
              f'{val:.3f}', ha='center', fontsize=10)
@@ -208,6 +220,6 @@ ax2.set_xlim(0, 1); ax2.set_title('AUC par label'); ax2.set_xlabel('AUC')
 for i, (_, val) in enumerate(sp):
     ax2.text(val + 0.01, i, f'{val:.3f}', va='center', fontsize=8)
 
-fig.suptitle(f"{mode_name} — {K}-fold CV", fontsize=13, fontweight='bold')
-fig.tight_layout(); fig.savefig(f"kfold_{mode}.png", dpi=150); plt.show()
-print(f"\n✓ Sauvegardé : kfold_{mode}.png")
+fig.suptitle(f"{mode_name} -- {K}-fold CV", fontsize=13, fontweight='bold')
+fig.tight_layout(); fig.savefig(os.path.join(OUT_DIR, f"kfold_{mode}.png"), dpi=150); plt.show()
+print(f"\n=> Sauvegarde : outputs/kfold_{mode}.png")
