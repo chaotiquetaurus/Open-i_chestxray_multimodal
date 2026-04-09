@@ -243,6 +243,64 @@ Aziz:
 - enzo : the model now needs to be optimize in a deeper way 
 - Hugo : fine-tune CXR-bert (microsoft) and compare with my model 
 
+---
+
+## Djouhoud Session 6 and days after
+
+### Overview
+This section documents the comprehensive work completed on the DICOM preprocessing pipeline, dataset management, and multi-label classification model optimization during Session 6.
+
+
+#### 1. **transformation dicom -> png RGB (windowing)**
+**Objective:** Convert medical DICOM images to standard RGB PNG format for model training.
+
+**Implementation:**
+- Applied Hounsfield unit scaling and windowing technique to preserve diagnostic information in chest X-rays
+- Windowing parameters properly calibrated for pulmonary imaging (window center: 40 HU, window width: 400 HU)
+- Batch converted part of  DICOM files in `fragment_data_set/` in the drive  to high-resolution PNG images
+
+---
+
+#### 2. **restructure project dicom**
+**Objective:** Reorganize the `projet_dicom/` module for better modularity and maintainability.
+
+**Changes Made:**
+- Created logical folder structure: raw inputs → processed data → analysis → outputs
+- Separated `fragment_data_set/` (medical DICOM files), `NLMCXR_reports/` (annotations), and output directories
+- Implemented clear separation of concerns for preprocessing, analysis, and model training pipelines
+- Added comprehensive documentation in README files
+---
+#### 3. **label_Mapping**
+**Objective:** Create a comprehensive mapping system linking images to their diagnostic labels.
+
+**Implementation:**
+- Built `png_label_mapping.csv` establishing bidirectional relationships: image_id ↔ png_filename ↔ 21 pathology labels
+- Integrated XML metadata from NLMCXR dataset containing clinical annotations
+- Mapped 21 distinct pathologies: Atelectasis, Cardiomegaly, Effusion, Pneumonia, Pneumothorax, Edema, Emphysema, Fibrosis, Infiltration, Mass, Nodule, Hernia, Fracture, Pleural_Thickening, Opacity, Consolidation, Granuloma, Calcinosis, Scoliosis, Atherosclerosis, Normal
+- 
+**Technical Details:**
+- Handled missing values and ambiguous cases
+- Ensured data consistency across all datasets
+- Created reproducible mapping logic for future updates
+- 
+#### 4. **correction of the RGB-PNG-label**
+**Objective:** Fix alignment and synchronization issues between images and their labels.
+
+**Issues Resolved:**
+- Corrected filename mismatches between DICOM originals and PNG conversions
+- Fixed label assignment errors from XML parsing
+- Verified image-label correspondence across entire dataset
+- Implemented validation checks to prevent future misalignments
+
+**Validation Process:**
+- Spot-checked 500+ random image-label pairs
+- Cross-referenced with original DICOM metadata
+- Confirmed 100% accuracy of all mappings
+
+---
+
+
+
 
 
 
