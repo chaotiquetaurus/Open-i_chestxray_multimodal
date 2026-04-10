@@ -1,0 +1,36 @@
+# ============================================================
+# MM-MIA — dépendances Python du projet
+# Installation : pip install -r requirements.txt
+# ============================================================
+
+# --- Deep learning ---
+torch
+torchvision
+pytorch-lightning
+transformers
+tokenizers
+torchxrayvision
+
+# --- Data science ---
+numpy
+pandas
+scipy
+scikit-learn
+
+# --- Visualisation ---
+matplotlib
+seaborn
+
+# --- NLP ---
+spacy
+
+# --- Traitement d'images ---
+Pillow
+opencv-python
+
+# --- Imagerie médicale (DICOM) ---
+pydicom
+
+# --- Utilitaires ---
+tqdm
+requests
