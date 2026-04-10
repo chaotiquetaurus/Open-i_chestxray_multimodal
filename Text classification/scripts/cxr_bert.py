@@ -14,21 +14,22 @@
 """
 
 import os, sys, torch, torch.nn as nn
-import pandas as pd, numpy as np, matplotlib.pyplot as plt
+import numpy as np, matplotlib.pyplot as plt
 import pytorch_lightning as pl
 from torch.utils.data import DataLoader, random_split
-from transformers import AutoTokenizer, AutoModel
+from transformers import AutoTokenizer
 from sklearn.metrics import (f1_score, roc_auc_score,
                              classification_report, hamming_loss)
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 
-from data import LabelDataset, pad_collate
+from models import CXRBertClassifier
+from models.cxr_bert_classifier import CXR_BERT_NAME
+from data import LabelDataset, pad_collate, load_reports
 
 OUT_DIR  = os.path.join(ROOT, "outputs", "CXR-BERT-specialized")
 CKPT_DIR = os.path.join(ROOT, "checkpoints")
-DATA_DIR = os.path.join(ROOT, "data")
 os.makedirs(OUT_DIR, exist_ok=True)
 os.makedirs(CKPT_DIR, exist_ok=True)
 
@@ -36,27 +37,14 @@ os.makedirs(CKPT_DIR, exist_ok=True)
 #  CONFIG
 # ======================================================================
 
-FINETUNE_PATH = os.path.join(DATA_DIR, "dataset_reports.csv")
-TEXT_COL      = "findings"
-META_COLS     = {"xml_uid", "indication", "findings", "impression",
-                 "comparison", "image_ids", "num_images"}
-
-LABELS_5  = ["Atelectasis", "Cardiomegaly", "Consolidation", "Edema", "Effusion"]
-LABELS_14 = [
-    "Atelectasis", "Cardiomegaly", "Effusion", "Infiltration", "Mass",
-    "Nodule", "Pneumonia", "Pneumothorax", "Consolidation", "Edema",
-    "Emphysema", "Fibrosis", "Pleural_Thickening", "Hernia",
-]
-
 mode = int(sys.argv[1]) if len(sys.argv) > 1 else 21
 assert mode in (5, 14, 21), "Usage : python scripts/cxr_bert.py [5|14|21]"
 
-MODEL_NAME = "microsoft/BiomedVLP-CXR-BERT-specialized"
-MAX_LEN    = 256
-EPOCHS     = 30
-LR         = 2e-5
-BATCH      = 16
-PATIENCE   = 5
+MAX_LEN  = 256
+EPOCHS   = 30
+LR       = 2e-5
+BATCH    = 16
+PATIENCE = 5
 
 # ======================================================================
 #  LIGHTNING MODULE
@@ -65,42 +53,23 @@ PATIENCE   = 5
 class LitCXRBert(pl.LightningModule):
     def __init__(self, n_labels, pos_weight, pad_id=0):
         super().__init__()
-        self.bert = AutoModel.from_pretrained(MODEL_NAME, trust_remote_code=True)
-        hidden = self.bert.config.hidden_size
-        self.head = nn.Sequential(nn.Dropout(0.1), nn.Linear(hidden, n_labels))
+        self.clf = CXRBertClassifier(n_labels, pad_id)
+        self.clf.freeze_encoder()
         self.loss_fn = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
-        self.pad_id = pad_id
 
-        # History tracking
         self.val_probs, self.val_labels = [], []
         self.history = {"train": [], "val": []}
         self._train_losses, self._val_losses = [], []
 
-        # Freeze entire BERT at init (epoch 1 = head only)
-        for p in self.bert.parameters():
-            p.requires_grad = False
-
-        # Identify encoder layers (handle wrapped BERT models)
-        core = self.bert.bert if hasattr(self.bert, "bert") else self.bert
-        self._layers = core.encoder.layer
-        self._pooler = getattr(core, "pooler", None)
-
     def forward(self, ids):
-        mask = (ids != self.pad_id).long()
-        out = self.bert(input_ids=ids, attention_mask=mask)
-        return self.head(out.last_hidden_state[:, 0])
+        return self.clf(ids)
 
     def on_train_epoch_start(self):
         # current_epoch is 0-indexed :
         #   0 → epoch 1 → head only (frozen from __init__)
         #   1 → epoch 2 → unfreeze layers 10-11 + pooler
         if self.current_epoch == 1:
-            for layer in self._layers[10:]:
-                for p in layer.parameters():
-                    p.requires_grad = True
-            if self._pooler is not None:
-                for p in self._pooler.parameters():
-                    p.requires_grad = True
+            self.clf.unfreeze_top_layers()
         n = sum(p.numel() for p in self.parameters() if p.requires_grad)
         print(f"  Epoch {self.current_epoch + 1}: {n:,} trainable params")
 
@@ -153,34 +122,18 @@ class LitCXRBert(pl.LightningModule):
 
 np.random.seed(42); torch.manual_seed(42)
 
-df = pd.read_csv(FINETUNE_PATH)
-if mode == 5:    label_cols = [c for c in LABELS_5  if c in df.columns]
-elif mode == 14: label_cols = [c for c in LABELS_14 if c in df.columns]
-else:            label_cols = [c for c in df.columns if c not in META_COLS]
+texts, labels_np, label_cols, pos_weight, mode_name = load_reports(
+    mode=mode, text_cols="findings", pw_clip=5)
 
-df = df.dropna(subset=[TEXT_COL])
-texts     = df[TEXT_COL].astype(str).tolist()
-labels_np = df[label_cols].apply(pd.to_numeric, errors="coerce").fillna(0).values
-
-mode_name = {5: "CheXpert-5", 14: "NIH-14", 21: "IU-XRay-21"}[mode]
 print(f"Mode    : {mode_name}")
 print(f"Dataset : {len(texts)} rapports | {len(label_cols)} labels")
 print(f"Labels  : {label_cols}")
 
-# -- Tokenizer : backend tokenizers pour LabelDataset -------------------
-
-hf_tok = AutoTokenizer.from_pretrained(MODEL_NAME, trust_remote_code=True)
+hf_tok = AutoTokenizer.from_pretrained(CXR_BERT_NAME, trust_remote_code=True)
 PAD_ID = hf_tok.pad_token_id
 
 tok = hf_tok.backend_tokenizer
 tok.enable_truncation(max_length=MAX_LEN)
-
-# -- pos_weight : neg/pos clampe a 5 -----------------------------------
-
-y_all = torch.tensor(labels_np)
-pos = y_all.sum(0); neg = len(y_all) - pos
-pos_weight = (neg / pos.clamp(min=1)).clamp(max=5)
-print(f"pos_weight : {pos_weight.numpy().round(2)}")
 
 full_ds = LabelDataset(texts, labels_np.tolist(), tok)
 n_val = max(1, len(full_ds) // 5)
