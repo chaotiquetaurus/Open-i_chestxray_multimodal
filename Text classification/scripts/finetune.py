@@ -9,7 +9,7 @@
 """
 
 import os, sys, random, torch, torch.nn as nn, torch.nn.functional as F
-import pandas as pd, numpy as np, matplotlib.pyplot as plt
+import numpy as np, matplotlib.pyplot as plt
 from tokenizers import Tokenizer
 from torch.utils.data import DataLoader, random_split
 from sklearn.metrics import f1_score, roc_auc_score, classification_report, hamming_loss
@@ -18,11 +18,10 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 
 from models import BERTForMLM, Classifier
-from data import LabelDataset, pad_collate
+from data import LabelDataset, pad_collate, load_reports
 
 CKPT_DIR = os.path.join(ROOT, "checkpoints")
 OUT_DIR  = os.path.join(ROOT, "outputs")
-DATA_DIR = os.path.join(ROOT, "data")
 os.makedirs(CKPT_DIR, exist_ok=True)
 os.makedirs(OUT_DIR, exist_ok=True)
 
@@ -30,21 +29,6 @@ os.makedirs(OUT_DIR, exist_ok=True)
 #  CONFIG
 # ======================================================================
 
-FINETUNE_PATH = os.path.join(DATA_DIR, "dataset_reports.csv")
-TEXT_COL      = "findings"
-META_COLS     = {"xml_uid", "indication", "findings", "impression",
-                 "comparison", "image_ids", "num_images"}
-
-# -- Jeux de labels ----------------------------------------------------
-LABELS_5 = ["Atelectasis", "Cardiomegaly", "Consolidation", "Edema", "Effusion"]
-
-LABELS_14 = [
-    "Atelectasis", "Cardiomegaly", "Effusion", "Infiltration", "Mass",
-    "Nodule", "Pneumonia", "Pneumothorax", "Consolidation", "Edema",
-    "Emphysema", "Fibrosis", "Pleural_Thickening", "Hernia",
-]
-
-# -- Choix via argument ------------------------------------------------
 mode = int(sys.argv[1]) if len(sys.argv) > 1 else 21
 assert mode in (5, 14, 21), "Usage : python scripts/finetune.py [5|14|21]"
 
@@ -62,21 +46,11 @@ DEVICE   = "cuda" if torch.cuda.is_available() else "cpu"
 
 random.seed(42); torch.manual_seed(42); np.random.seed(42)
 
-df = pd.read_csv(FINETUNE_PATH)
+texts, labels_np, label_cols, pos_weight, mode_name = load_reports(
+    mode=mode, text_cols="findings", pw_clip=5)
+labels = labels_np.tolist()
+pos_weight = pos_weight.to(DEVICE)
 
-if mode == 5:
-    label_cols = [c for c in LABELS_5 if c in df.columns]
-elif mode == 14:
-    label_cols = [c for c in LABELS_14 if c in df.columns]
-else:
-    label_cols = [c for c in df.columns if c not in META_COLS]
-
-df = df.dropna(subset=[TEXT_COL])
-texts     = df[TEXT_COL].astype(str).tolist()
-labels_np = df[label_cols].apply(pd.to_numeric, errors="coerce").fillna(0).values
-labels    = labels_np.tolist()
-
-mode_name = {5: "CheXpert-5", 14: "NIH-14", 21: "IU-XRay-21"}[mode]
 print(f"Mode     : {mode_name}")
 print(f"Dataset  : {len(texts)} rapports | {len(label_cols)} labels | Device : {DEVICE}")
 print(f"Labels   : {label_cols}")
@@ -104,11 +78,6 @@ full_ds = LabelDataset(texts, labels, tok)
 n_val = max(1, len(full_ds) // 5)
 train_ds, val_ds = random_split(full_ds, [len(full_ds) - n_val, n_val])
 print(f"Train : {len(train_ds)} | Val : {n_val}")
-
-# pos_weight : neg/pos clampe a 5
-y_all = torch.tensor(labels_np)
-pos = y_all.sum(0); neg = len(y_all) - pos
-pos_weight = (neg / pos.clamp(min=1)).clamp(max=5).to(DEVICE)
 print(f"pos_weight : {pos_weight.cpu().numpy().round(2)}")
 
 loss_fn = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
