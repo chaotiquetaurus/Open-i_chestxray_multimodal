@@ -234,9 +234,13 @@ Aziz:
 - enzo : the model has been improved
 -hugo : Following once again the very good chap 15 of d2l.ai, i built a pretrain functiun on a portion of MIMICXR datasets (29k)
 -hugo : Fine tuned the model on open-i
+-Aziz: Worked on improving the vit model using MultilabelStratifiedShuffleSplit, Stronger data augmentation, using asymmetric loss, and a richer classification head.
 
 **Decisions / Results:**
 -Very very Satisfying result on the bert classifier, i obtain an auc score of .94 which is not so far from the .97 that we aim for. Although my model overfitt because i need to train all the layer during fine-tunning as my model is quite small (5m param/300mfor cxr-bert)
+
+-Aziz: The model is no longer overfitting thanks to the new loss function. I got similar results as the previous model.
+
 
 **Next Steps for the Following Session:**
 
@@ -300,7 +304,17 @@ This section documents the comprehensive work completed on the DICOM preprocessi
 ---
 
 
+### Session 6 [10/04/26]
+
+
+**Activities Completed before session:**
+
+**Session Objectives:**
 
 
 
+**Activities Completed:**
+-Aziz: Worked on preparing the presentation for the intermediate evaluation.
 
+
+**Decisions / Results:**
