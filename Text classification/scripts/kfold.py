@@ -11,7 +11,7 @@
 """
 
 import os, sys, copy, torch, torch.nn as nn
-import pandas as pd, numpy as np, matplotlib.pyplot as plt
+import numpy as np, matplotlib.pyplot as plt
 import pytorch_lightning as pl
 from torch.utils.data import DataLoader, Subset
 from tokenizers import Tokenizer
@@ -22,27 +22,16 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 
 from models import BERTForMLM, Classifier
-from data import LabelDataset, pad_collate
+from data import LabelDataset, pad_collate, load_reports
 
 CKPT_DIR = os.path.join(ROOT, "checkpoints")
 OUT_DIR  = os.path.join(ROOT, "outputs")
-DATA_DIR = os.path.join(ROOT, "data")
 os.makedirs(CKPT_DIR, exist_ok=True)
 os.makedirs(OUT_DIR, exist_ok=True)
 
 # ======================================================================
 #  CONFIG
 # ======================================================================
-
-FINETUNE_PATH = os.path.join(DATA_DIR, "dataset_reports.csv")
-TEXT_COLS  = ["indication", "findings"]
-META_COLS  = {"xml_uid", "indication", "findings", "impression",
-              "comparison", "image_ids", "num_images"}
-
-LABELS_5  = ["Atelectasis", "Cardiomegaly", "Consolidation", "Edema", "Effusion"]
-LABELS_14 = ["Atelectasis", "Cardiomegaly", "Effusion", "Infiltration", "Mass",
-             "Nodule", "Pneumonia", "Pneumothorax", "Consolidation", "Edema",
-             "Emphysema", "Fibrosis", "Pleural_Thickening", "Hernia"]
 
 mode = int(sys.argv[1]) if len(sys.argv) > 1 else 21
 assert mode in (5, 14, 21)
@@ -101,16 +90,9 @@ class LitClassifier(pl.LightningModule):
 
 np.random.seed(42); torch.manual_seed(42)
 
-df = pd.read_csv(FINETUNE_PATH)
-if mode == 5:    label_cols = [c for c in LABELS_5  if c in df.columns]
-elif mode == 14: label_cols = [c for c in LABELS_14 if c in df.columns]
-else:            label_cols = [c for c in df.columns if c not in META_COLS]
+texts, labels_np, label_cols, pos_weight, mode_name = load_reports(
+    mode=mode, text_cols=["indication", "findings"], pw_clip=20)
 
-df = df.dropna(subset=TEXT_COLS)
-texts     = df[TEXT_COLS].fillna("").agg(" ".join, axis=1).str.strip().tolist()
-labels_np = df[label_cols].apply(pd.to_numeric, errors="coerce").fillna(0).values
-
-mode_name = {5: "CheXpert-5", 14: "NIH-14", 21: "IU-XRay-21"}[mode]
 print(f"{mode_name} | {len(texts)} rapports | {len(label_cols)} labels | {K}-fold CV")
 
 tok = Tokenizer.from_file(os.path.join(CKPT_DIR, "tokenizer.json"))
@@ -118,12 +100,6 @@ V = tok.get_vocab_size()
 bert = BERTForMLM(V, D, H, N, D_FF)
 bert.load_state_dict(torch.load(os.path.join(CKPT_DIR, "bert_pretrained.pt"),
                                 map_location="cpu", weights_only=True))
-
-# pos_weight
-y_all = torch.tensor(labels_np)
-y_patho = y_all[y_all.sum(1) > 0]
-pos = y_patho.sum(0); neg = len(y_patho) - pos
-pos_weight = (neg / pos.clamp(min=1)).clamp(max=20)
 
 full_ds = LabelDataset(texts, labels_np.tolist(), tok)
 
