@@ -4,6 +4,8 @@ This document is used to record sessions, tasks, and observations. Simply fill i
 
 ## General Information
 
+!!!! When it said "Activities Completed before session" : it is what has been done between the seesion before and this one
+
 - **Project Name: Beyond Pixel**
 - **Project Lead: AHMED SAID Djouhoud**
 - **Start Date: 11/02**
@@ -165,21 +167,21 @@ In this session, each person focused on where they wanted to start. Overall, eve
 
 ### Session 4 [16/03/26]
 
-**Activities Completed before session:**
+**Activities Completed before session:** -> meaning between the two session
 
-- meeting with Nikolas
+
 
 **Session Objectives:**
--meeting
 
+-meeting![alt text](image.png)
 
 **Activities Completed:**
 
 
 **Decisions / Results:**
 -We decided to continue on our program basicly.
--enzo need to implement fully the pipeline he beggined
--aziz try to solve overfittting problem
+-enzo:  need to implement fully the pipeline he beggined
+-aziz:  try to solve overfittting problem
 
 
 
@@ -222,19 +224,41 @@ Aziz:
 
 **Activities Completed before session:**
 -hugo : continue and finish with the bert classifier
+- enzo : did some research on how improving our own model
 
 **Session Objectives:**
 
-
+Djouhoud:
+- Create a comprehensive mapping system linking images to their diagnostic labels.
+- Reorganize the `projet_dicom/` module for better modularity and maintainability.
+- Convert medical DICOM images to standard RGB PNG format for model training.
+- Fix alignment and synchronization issues between images and their labels.
+Enzo:
 - Developing and improving our own model in an effort to create something that runs in a reasonable amount of time and works reasonably well. For now, the focus is primarily on simply optimizing the model to achieve satisfactory results.
+Hugo:
 -engineer the prtrain, find a bigger cxray datasets to pretrain 
 
 **Activities Completed:**
 
-- enzo : the model has been improved
+- enzo : the model has been improved, more efficient with more layers and a more optimized augmentation
 -hugo : Following once again the very good chap 15 of d2l.ai, i built a pretrain functiun on a portion of MIMICXR datasets (29k)
 -hugo : Fine tuned the model on open-i
 -Aziz: Worked on improving the vit model using MultilabelStratifiedShuffleSplit, Stronger data augmentation, using asymmetric loss, and a richer classification head.
+-djouhoud :
+- Applied Hounsfield unit scaling and windowing technique to preserve diagnostic information in chest X-rays
+- Windowing parameters properly calibrated for pulmonary imaging (window center: 40 HU, window width: 400 HU)
+- Batch converted part of  DICOM files in `fragment_data_set/` in the drive  to high-resolution PNG images
+- Created logical folder structure: raw inputs → processed data → analysis → outputs
+- Separated `fragment_data_set/` (medical DICOM files), `NLMCXR_reports/` (annotations), and output directories
+- Implemented clear separation of concerns for preprocessing, analysis, and model training pipelines
+- Added comprehensive documentation in README files
+- Built `png_label_mapping.csv` establishing bidirectional relationships: image_id ↔ png_filename ↔ 21 pathology labels
+- Integrated XML metadata from NLMCXR dataset containing clinical annotations
+- Mapped 21 distinct pathologies: Atelectasis, Cardiomegaly, Effusion, Pneumonia, Pneumothorax, Edema, Emphysema, Fibrosis, Infiltration, Mass, Nodule, Hernia, Fracture, Pleural_Thickening, Opacity, Consolidation, Granuloma, Calcinosis, Scoliosis, Atherosclerosis, Normal
+- Corrected filename mismatches between DICOM originals and PNG conversions
+- Fixed label assignment errors from XML parsing
+- Verified image-label correspondence across entire dataset
+- Implemented validation checks to prevent future misalignments
 
 **Decisions / Results:**
 -Very very Satisfying result on the bert classifier, i obtain an auc score of .94 which is not so far from the .97 that we aim for. Although my model overfitt because i need to train all the layer during fine-tunning as my model is quite small (5m param/300mfor cxr-bert)
@@ -249,68 +273,15 @@ Aziz:
 
 ---
 
-## Djouhoud Session 6 and days after
-
-### Overview
-This section documents the comprehensive work completed on the DICOM preprocessing pipeline, dataset management, and multi-label classification model optimization during Session 6.
-
-
-#### 1. **transformation dicom -> png RGB (windowing)**
-**Objective:** Convert medical DICOM images to standard RGB PNG format for model training.
-
-**Implementation:**
-- Applied Hounsfield unit scaling and windowing technique to preserve diagnostic information in chest X-rays
-- Windowing parameters properly calibrated for pulmonary imaging (window center: 40 HU, window width: 400 HU)
-- Batch converted part of  DICOM files in `fragment_data_set/` in the drive  to high-resolution PNG images
-
----
-
-#### 2. **restructure project dicom**
-**Objective:** Reorganize the `projet_dicom/` module for better modularity and maintainability.
-
-**Changes Made:**
-- Created logical folder structure: raw inputs → processed data → analysis → outputs
-- Separated `fragment_data_set/` (medical DICOM files), `NLMCXR_reports/` (annotations), and output directories
-- Implemented clear separation of concerns for preprocessing, analysis, and model training pipelines
-- Added comprehensive documentation in README files
----
-#### 3. **label_Mapping**
-**Objective:** Create a comprehensive mapping system linking images to their diagnostic labels.
-
-**Implementation:**
-- Built `png_label_mapping.csv` establishing bidirectional relationships: image_id ↔ png_filename ↔ 21 pathology labels
-- Integrated XML metadata from NLMCXR dataset containing clinical annotations
-- Mapped 21 distinct pathologies: Atelectasis, Cardiomegaly, Effusion, Pneumonia, Pneumothorax, Edema, Emphysema, Fibrosis, Infiltration, Mass, Nodule, Hernia, Fracture, Pleural_Thickening, Opacity, Consolidation, Granuloma, Calcinosis, Scoliosis, Atherosclerosis, Normal
-- 
-**Technical Details:**
-- Handled missing values and ambiguous cases
-- Ensured data consistency across all datasets
-- Created reproducible mapping logic for future updates
-- 
-#### 4. **correction of the RGB-PNG-label**
-**Objective:** Fix alignment and synchronization issues between images and their labels.
-
-**Issues Resolved:**
-- Corrected filename mismatches between DICOM originals and PNG conversions
-- Fixed label assignment errors from XML parsing
-- Verified image-label correspondence across entire dataset
-- Implemented validation checks to prevent future misalignments
-
-**Validation Process:**
-- Spot-checked 500+ random image-label pairs
-- Cross-referenced with original DICOM metadata
-- Confirmed 100% accuracy of all mappings
-
----
-
 
 ### Session 6 [10/04/26]
 
 
 **Activities Completed before session:**
+Enzo: exam revision
 
 **Session Objectives:**
-
+Enzo : nothing due to the exams
 
 
 **Activities Completed:**
@@ -318,3 +289,41 @@ This section documents the comprehensive work completed on the DICOM preprocessi
 
 
 **Decisions / Results:**
+
+**Next Steps for the Following Session:**
+
+
+### Session 7 [15/04/26]
+
+
+**Activities Completed before session:**
+Enzo: exam revision
+
+**Session Objectives:**
+Enzo : nothing due to the exams
+
+
+**Activities Completed:**
+
+
+
+**Decisions / Results:**
+
+**Next Steps for the Following Session:**
+
+### Session 8 [05/05/26]
+
+**Activities Completed before session:** 
+Enzo : Watched the video about multimodel implementation : 
+Stanford CS224N NLP with Deep Learning | 2023 | Lecture 16 - Multimodal Deep Learning, Douwe Kiela
+Start reading the article mentionned in the video : Learning Transferable Visual Models From Natural Language Supervision
+
+**Session Objectives:**
+ - Put averything together and for the planning for the next steps
+
+**Activities Completed:**
+Enzo : discuss about what I've learned with the others and focus on the planning for the next sessions
+
+**Decisions / Results:**
+
+**Next Steps for the Following Session:**
