@@ -278,7 +278,7 @@ Hugo:
 
 
 **Activities Completed before session:**
-Enzo: exam revision
+Enzo: Implement torch.lightning to the codes so that it is easier to use the GPUs. exam revision
 
 **Session Objectives:**
 Enzo : nothing due to the exams
@@ -325,5 +325,7 @@ Start reading the article mentionned in the video : Learning Transferable Visual
 Enzo : discuss about what I've learned with the others and focus on the planning for the next sessions
 
 **Decisions / Results:**
+We decided to work one more week on the Deecom but give up if it still doesn't work, for the Fusion Phase,we shared what we know and organize what people are going to do 
 
 **Next Steps for the Following Session:**
+Enzo: try to think about a simple API
