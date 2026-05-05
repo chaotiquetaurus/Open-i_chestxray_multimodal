@@ -39,8 +39,13 @@ gantt
     Debug CV Models           :m1c_debug, 2025-04-25, 2025-05-04
     Debug Extraction          :m2c_debug, 2025-04-25, 2025-05-04
 
+    section pre-Fusion
+    Fusion Phase, learing phase (3)       :fusion, 2025-05-05, 2025-05-13
+    Deecom Implementation (2)       :fusion, 2025-05-05, 2025-05-13
+
     section Fusion
-    Fusion Phase (All)        :fusion, 2025-05-05, 2025-05-24
+    Implementation Fusion Phase (All)       :fusion, 2025-05-14, 2025-05-24
+
 
     section Evaluation & Debug
     Debug + Evaluation (All)  :eval, 2025-05-25, 2025-06-11
@@ -52,7 +57,11 @@ gantt
 
 ## Planning
 
+Member 1: Hugo Hennion
 Member 2: Mohamed Aziz Chebil
+Member 3: Enzo sakhinis
+Member 4: Djouhoud
+Member 5: Helias
 
 
 <table>
@@ -201,8 +210,25 @@ Member 2: Mohamed Aziz Chebil
     </tr>
     <tr>
       <td>Individual Finalization + Fusion</td>
+      <td>Member 1,2,3</td>
+      <td>Learn documention and finalize with what we know the next steps for the following sessions</td>
+      <td>May 5 – May 13</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>Individual Finalization + Fusion</td>
+      <td>Member 4,5</td>
+      <td>Try to implement Deecom model</td>
+      <td>May 5 – May 13</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>Individual Finalization + Fusion</td>
       <td>All</td>
-      <td>Finalize individual components, start multimodal integration. everyone will participate because everyone needs to implement his precedent task to the fusion. In this part, we'll also study codes and system that already work for what we want to do and observe how it works - this will be the first days of the multimodal fusion.</td>
+      <td>Finalize individual components, start multimodal integration. everyone will participate because everyone needs to implement his precedent task to the fusion. In this part, we'll also study codes and system that already work for what we want to do and observe how it works - this will be the first days of the multimodal fusion. 
+      - M1,M2 : Projection & Embedding Alignment, Make image and text embeddings compatible for fusion.
+      - M3, M4,M5 : Loss Contrastive & Training Loop, Loss Contrastive & Training Loop, Evaluation & Zero‑Shot Retrieval, build simple API
+      -</td>
       <td>May 5 – May 24</td>
       <td></td>
     </tr>
