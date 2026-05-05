@@ -297,7 +297,7 @@ Enzo : nothing due to the exams
 
 
 **Activities Completed before session:**
-Enzo: exam revision
+Enzo: Try to implement finetuning (better) in our own created model (juste to see, btw we will switch to the model developped with Aziz) to compare and se the differences with a model not so good, exam revision
 
 **Session Objectives:**
 Enzo : nothing due to the exams
