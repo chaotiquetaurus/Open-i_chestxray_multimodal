@@ -10,6 +10,9 @@ gantt
     Planning Check (All)      :a2, 2025-03-08, 1d
 
     section Week 1 Training Data
+    
+    Member 2: Mohamed Aziz Chebil
+
     Training (M1)             :m1a, 2025-03-09, 2025-03-15
     Training (M2)             :m2a, 2025-03-09, 2025-03-15
     Training (M3)             :m3a, 2025-03-09, 2025-03-15
@@ -48,6 +51,9 @@ gantt
 
 
 ## Planning
+
+Member 2: Mohamed Aziz Chebil
+
 
 <table>
   <thead>
