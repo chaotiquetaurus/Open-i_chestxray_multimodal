@@ -329,3 +329,20 @@ We decided to work one more week on the Deecom but give up if it still doesn't w
 
 **Next Steps for the Following Session:**
 Enzo: try to think about a simple API
+
+### Session 8 [05/05/26]
+
+**Activities Completed before session:** 
+Enzo : Made a simple API and tried if it works with enzo's model : https://test-api-2-production.up.railway.app/docs   . The Api take in consideration the model according to the dictionnary containing all the values each neuron has after training the model. To use the API with another model, we only need to change the `model_full.pth`. The API use `Dockers`, to containes things and the deployement has been mage using `Railway`
+
+**Session Objectives:**
+Enzo: work with the others with the multimodal goals.
+
+**Activities Completed:**
+
+
+**Decisions / Results:**
+
+
+**Next Steps for the Following Session:**
+enzo : continue to think of ways to improve our multimodal implementation.
