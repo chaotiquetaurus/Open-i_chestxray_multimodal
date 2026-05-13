@@ -333,16 +333,21 @@ Enzo: try to think about a simple API
 ### Session 8 [05/05/26]
 
 **Activities Completed before session:** 
+Djouhoud: Downloaded the dataset to the Telecom GPU server and verified the total number of DICOM files.
+
 Enzo : Made a simple API and tried if it works with enzo's model : https://test-api-2-production.up.railway.app/docs   . The Api take in consideration the model according to the dictionnary containing all the values each neuron has after training the model. To use the API with another model, we only need to change the `model_full.pth`. The API use `Dockers`, to containes things and the deployement has been mage using `Railway`
 
 **Session Objectives:**
 Enzo: work with the others with the multimodal goals.
+Djouhoud: Preprocessed DICOM files using the multi-window windowing method on the Telecom GPU server.
 
-**Activities Completed:**
+**Activities Completed before session :** 
+
 
 
 **Decisions / Results:**
-
+Djouhoud: Encountered disk quota limitation during DICOM preprocessing. The output directory exceeded available storage on the Telecom GPU server.
 
 **Next Steps for the Following Session:**
 enzo : continue to think of ways to improve our multimodal implementation.
+Djouhoud: Explore alternative DICOM processing technique using 3D volumetric representation.
