@@ -173,7 +173,7 @@ In this session, each person focused on where they wanted to start. Overall, eve
 
 **Session Objectives:**
 
--meeting![alt text](image.png)
+-meeting
 
 **Activities Completed:**
 
