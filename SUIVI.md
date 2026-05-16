@@ -347,6 +347,7 @@ Enzo: work with the others with the multimodal goals.
 djouhoud: -  fine-tuning of a DenseNet-121 model using a preprocessed dataset (windowing applied and reduced image size).
 - Training was performed for half of the data set and 5 epochs to test whether the model can run and converge successfully.
 - start to preprocess the dataset for the volume methode 
+enzo : discuss about how we should do the multimodal implementation. Read about that
 
 **Decisions / Results:**
 Djouhoud: The windowing method is not suitable for Google Colab, as it significantly increases training time even when using only half of the dataset, and the resulting metrics are not satisfactory.
