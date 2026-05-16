@@ -317,39 +317,33 @@ Enzo : nothing due to the exams
 Enzo : Watched the video about multimodel implementation : 
 Stanford CS224N NLP with Deep Learning | 2023 | Lecture 16 - Multimodal Deep Learning, Douwe Kiela
 Start reading the article mentionned in the video : Learning Transferable Visual Models From Natural Language Supervision
-Djouhoud: Downloaded the dataset to the Telecom GPU server and verified the total number of DICOM files.
-
 
 **Session Objectives:**
  - Put averything together and for the planning for the next steps
-Djouhoud: Preprocessed DICOM files using the multi-window windowing method on the Telecom GPU server.
+
 **Activities Completed:**
 Enzo : discuss about what I've learned with the others and focus on the planning for the next sessions
-Aziz: Read online blogs about multi-model implementation "Building a Multimodal Classifier in PyTorch: A Step-by-Step Guide".
 
 **Decisions / Results:**
 We decided to work one more week on the Deecom but give up if it still doesn't work, for the Fusion Phase,we shared what we know and organize what people are going to do 
-Djouhoud: Encountered disk quota limitation during DICOM preprocessing. The output directory exceeded available storage on the Telecom GPU server.
+
 **Next Steps for the Following Session:**
 Enzo: try to think about a simple API
-Aziz: Help Elias in the multi-model implementation.
-Djouhoud: Explore alternative DICOM processing technique using 3D volumetric representation.
+
 ### Session 8 [13/05/26]
 
 **Activities Completed before session:** 
-
-
 Enzo : Made a simple API and tried if it works with enzo's model : https://test-api-2-production.up.railway.app/docs   . The Api take in consideration the model according to the dictionnary containing all the values each neuron has after training the model. To use the API with another model, we only need to change the `model_full.pth`. The API use `Dockers`, to containes things and the deployement has been mage using `Railway`
+
 **Session Objectives:**
 Enzo: work with the others with the multimodal goals.
 
-
-**Activities Completed before session :** 
-
-
+**Activities Completed:**
+Enzo : find some info and think about multimodal implementation
 
 **Decisions / Results:**
 
 
 **Next Steps for the Following Session:**
 enzo : continue to think of ways to improve our multimodal implementation.
+
