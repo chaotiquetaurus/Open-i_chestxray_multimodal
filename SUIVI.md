@@ -343,13 +343,15 @@ Enzo : Made a simple API and tried if it works with enzo's model : https://test-
 **Session Objectives:**
 Enzo: work with the others with the multimodal goals.
 
-
-**Activities Completed before session :** 
-
-
+**Activities Completed:**
+djouhoud: -  fine-tuning of a DenseNet-121 model using a preprocessed dataset (windowing applied and reduced image size).
+- Training was performed for half of the data set and 5 epochs to test whether the model can run and converge successfully.
+- start to preprocess the dataset for the volume methode 
 
 **Decisions / Results:**
+Djouhoud: The windowing method is not suitable for Google Colab, as it significantly increases training time even when using only half of the dataset, and the resulting metrics are not satisfactory.
 
 
 **Next Steps for the Following Session:**
 enzo : continue to think of ways to improve our multimodal implementation.
+djouhoud : focusing in the volume methode
