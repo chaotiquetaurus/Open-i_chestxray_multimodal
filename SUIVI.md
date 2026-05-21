@@ -360,7 +360,7 @@ djouhoud : focusing in the volume methode
 ### Session 9 [27/05/26]
 
 **Activities Completed before session:** 
-enzo  : improve the model : The code trains a multimodal model that combines a chest X‑ray processed by EfficientNet‑B0 with TF‑IDF text features from clinical reports. The two embeddings are concatenated and passed through a fusion MLP that predicts 14 thoracic pathologies. Training happens in two stages: first the fusion head is learned while the image branch is frozen, then the entire network is fine‑tuned
+enzo : improve the model : The code trains a multimodal model that combines a chest X‑ray processed by EfficientNet‑B0 with TF‑IDF text features from clinical reports. The two embeddings are concatenated and passed through a fusion MLP that predicts 14 thoracic pathologies. Training happens in two stages: first the fusion head is learned while the image branch is frozen, then the entire network is fine‑tuned ----> see the branch enzo_multimodal for now.
 
 **Session Objectives:**
 enzo : use the .pth of the other's model to check if everything works with the model done.
