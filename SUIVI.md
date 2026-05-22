@@ -135,7 +135,7 @@ In this session, each person focused on where they wanted to start. Overall, eve
 - Enzo: Already done before (vacation): Video DL finisehd. Write a first DL model with a dataset already existed.
 - Hugo: Built an end-to-end text classification pipeline in `Text classification/first_phases.ipynb`
 - Djouhoud: Djouhoud: use of the DICOM dataset API, start the treatment of the DICOM images 
--Aziz: Worked on the learning material.
+- Aziz: Continued reading the DL book, completed a HF course on CV.
 **Session Objectives:**
 
 - Enzo: Start the traitement of the data
@@ -202,6 +202,7 @@ Enzo - Complete the model from start to finish and strive to be efficient when w
 
 -Aziz: Built the first version of a computer vision model for multi-label classification: Fine-tuned a DenseNet-121 on the png dataset (7470 images). Achieved a score of 0.78 AUC
 The model can be found in `image classification (png)\cv_model_01.ipynb` with the documentation in `image classification (png)\readme.md`
+
 Enzo - The model we created works, but it’s not very efficient, so we’re going to switch to a more optimized model: we’ll take a look at PyTorch 
 Enzo - Transfer it as a python file so it can more easily be used (can be found in image classification (png)\own created model) and also work on the structure itseld (OO)
 -Hugo : I started building my own bert model to understand better the transformer architectiure. For that i used d2l.ia very good step by step guide to build an attention mecanism and then a (quite modern ! transformer), i implemented (without always understanding everything of course but still) multiheadedattention, Rope, add and rms norme.
@@ -243,7 +244,10 @@ Hugo:
 - enzo : the model has been improved, more efficient with more layers and a more optimized augmentation
 -hugo : Following once again the very good chap 15 of d2l.ai, i built a pretrain functiun on a portion of MIMICXR datasets (29k)
 -hugo : Fine tuned the model on open-i
--Aziz: Worked on improving the vit model using MultilabelStratifiedShuffleSplit, Stronger data augmentation, using asymmetric loss, and a richer classification head.
+
+-Aziz: Worked on improving the vit model using MultilabelStratifiedShuffleSplit, Stronger data augmentation, using asymmetric loss, and a richer classification head. Achieved a score of AUC: 75%
+
+
 -djouhoud :
 - Applied Hounsfield unit scaling and windowing technique to preserve diagnostic information in chest X-rays
 - Windowing parameters properly calibrated for pulmonary imaging (window center: 40 HU, window width: 400 HU)
@@ -318,6 +322,8 @@ Enzo : Watched the video about multimodel implementation :
 Stanford CS224N NLP with Deep Learning | 2023 | Lecture 16 - Multimodal Deep Learning, Douwe Kiela
 Start reading the article mentionned in the video : Learning Transferable Visual Models From Natural Language Supervision
 
+Aziz: Used also the learning material of Stanford CS224N to learn about multimodal implemebtatiob.
+Read several blog posts about techniques we can use of the multimodal implementation
 
 
 **Session Objectives:**
