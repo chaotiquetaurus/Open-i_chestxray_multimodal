@@ -173,7 +173,7 @@ In this session, each person focused on where they wanted to start. Overall, eve
 
 **Session Objectives:**
 
--meeting![alt text](image.png)
+-meeting
 
 **Activities Completed:**
 
@@ -324,28 +324,53 @@ Start reading the article mentionned in the video : Learning Transferable Visual
 
 Aziz: Used also the learning material of Stanford CS224N to learn about multimodal implemebtatiob.
 Read several blog posts about techniques we can use of the multimodal implementation
+Djouhoud: Downloaded the dataset to the Telecom GPU server and verified the total number of DICOM files.
 
 
 **Session Objectives:**
  - Put averything together and for the planning for the next steps
-
+Djouhoud: Preprocessed DICOM files using the multi-window windowing method on the Telecom GPU server.
 **Activities Completed:**
 Enzo : discuss about what I've learned with the others and focus on the planning for the next sessions
 Aziz: Read online blogs about multi-model implementation "Building a Multimodal Classifier in PyTorch: A Step-by-Step Guide".
 
 **Decisions / Results:**
 We decided to work one more week on the Deecom but give up if it still doesn't work, for the Fusion Phase,we shared what we know and organize what people are going to do 
-
+Djouhoud: Encountered disk quota limitation during DICOM preprocessing. The output directory exceeded available storage on the Telecom GPU server.
 **Next Steps for the Following Session:**
 Enzo: try to think about a simple API
 Aziz: Help Elias in the multi-model implementation.
-
+Djouhoud: Explore alternative DICOM processing technique using 3D volumetric representation.
 ### Session 8 [13/05/26]
 
 **Activities Completed before session:** 
+
+
 Enzo : Made a simple API and tried if it works with enzo's model : https://test-api-2-production.up.railway.app/docs   . The Api take in consideration the model according to the dictionnary containing all the values each neuron has after training the model. To use the API with another model, we only need to change the `model_full.pth`. The API use `Dockers`, to containes things and the deployement has been mage using `Railway`
 **Session Objectives:**
 Enzo: work with the others with the multimodal goals.
+
+**Activities Completed:**
+djouhoud: -  fine-tuning of a DenseNet-121 model using a preprocessed dataset (windowing applied and reduced image size).
+- Training was performed for half of the data set and 5 epochs to test whether the model can run and converge successfully.
+- start to preprocess the dataset for the volume methode 
+enzo : discuss about how we should do the multimodal implementation. Read about that
+
+**Decisions / Results:**
+Djouhoud: The windowing method is not suitable for Google Colab, as it significantly increases training time even when using only half of the dataset, and the resulting metrics are not satisfactory.
+
+
+**Next Steps for the Following Session:**
+enzo : continue to think of ways to improve our multimodal implementation.
+djouhoud : focusing in the volume methode
+
+### Session 9 [27/05/26]
+
+**Activities Completed before session:** 
+enzo : improve the model : The code trains a multimodal model that combines a chest X‑ray processed by EfficientNet‑B0 with TF‑IDF text features from clinical reports. The two embeddings are concatenated and passed through a fusion MLP that predicts 14 thoracic pathologies. Training happens in two stages: first the fusion head is learned while the image branch is frozen, then the entire network is fine‑tuned ----> see the branch enzo_multimodal for now.
+
+**Session Objectives:**
+enzo : use the .pth of the other's model to check if everything works with the model done.
 
 **Activities Completed:**
 
@@ -353,5 +378,6 @@ Enzo: work with the others with the multimodal goals.
 **Decisions / Results:**
 
 
+
 **Next Steps for the Following Session:**
-enzo : continue to think of ways to improve our multimodal implementation.
+
