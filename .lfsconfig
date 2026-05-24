@@ -1,4 +1,11 @@
-# Force tous les objets LFS vers GitLab ENST (instance école avec quota généreux).
-# Le remote GitHub (miroir public) ne recevra que les pointeurs LFS.
+# LFS suit automatiquement le remote utilisé pour git push.
+# Avec un remote SSH (git@gitlab.enst.fr:...), LFS s'authentifie via SSH.
+#
+# Pour interdire le push LFS vers le miroir GitHub (compte gratuit, quota 1Gb),
+# ne push jamais avec --all : push toujours vers origin explicitement.
+#   git push origin <branche>     ✅
+#   git push --all                ❌
+#
+# Désactive le locking API (non supportée par GitLab CE).
 [lfs]
-    url = https://gitlab.enst.fr/proj104/2025-2026/MM-MIA.git/info/lfs
+    locksverify = false
