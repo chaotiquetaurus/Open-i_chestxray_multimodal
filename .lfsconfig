@@ -1,0 +1,4 @@
+# Force tous les objets LFS vers GitLab ENST (instance école avec quota généreux).
+# Le remote GitHub (miroir public) ne recevra que les pointeurs LFS.
+[lfs]
+    url = https://gitlab.enst.fr/proj104/2025-2026/MM-MIA.git/info/lfs
