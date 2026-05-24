@@ -23,6 +23,8 @@
 *.tar.gz filter=lfs diff=lfs merge=lfs -text
 *.tgz filter=lfs diff=lfs merge=lfs -text
 *.7z filter=lfs diff=lfs merge=lfs -text
+# PNG : uniquement sous data/ (les figures docs/ et training curves restent en blob normal)
+data/**/*.png filter=lfs diff=lfs merge=lfs -text
 # Données tabulaires volumineuses (à activer si besoin)
 # *.parquet filter=lfs diff=lfs merge=lfs -text
 # *.feather filter=lfs diff=lfs merge=lfs -text
@@ -30,4 +32,3 @@
 * text=auto eol=lf
 *.bat text eol=crlf
 *.sh text eol=lf
-data/**/*.png filter=lfs diff=lfs merge=lfs -text
