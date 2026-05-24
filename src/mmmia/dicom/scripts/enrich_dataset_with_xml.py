@@ -9,11 +9,12 @@ import pandas as pd
 from pathlib import Path
 from collections import defaultdict
 
-# Paths
-XML_DIR = "NLMCXR_reports/ecgen-radiology"
-DICOM_DIR = "fragment_data_set"
-CSV_FILE = "dataset_labeled.csv"
-OUTPUT_CSV = "dataset_labeled_enriched.csv"
+# src/mmmia/dicom/scripts/enrich_dataset_with_xml.py → racine 4 niveaux au-dessus
+PROJECT_ROOT = Path(__file__).resolve().parents[4]
+XML_DIR = str(PROJECT_ROOT / "data" / "labeling" / "NLMCXR_reports" / "ecgen-radiology")
+DICOM_DIR = str(PROJECT_ROOT / "data" / "dicom" / "raw" / "fragment_data_set")
+CSV_FILE = str(PROJECT_ROOT / "data" / "shared" / "dataset_labeled.csv")
+OUTPUT_CSV = str(PROJECT_ROOT / "data" / "dicom" / "raw" / "dataset_labeled_enriched.csv")
 
 print("=" * 80)
 print("ÉTAPE 1: Extraction des métadonnées XML")

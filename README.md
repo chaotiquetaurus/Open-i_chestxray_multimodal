@@ -113,7 +113,9 @@ Tous les fichiers lourds (`*.dcm`, `*.zip`, `*.pth`, `*.ckpt`, PNG sous `data/`)
 - `git lfs pull` télécharge tout
 - `git lfs pull --include="data/text_classification/**"` ne télécharge qu'un sous-ensemble
 
-Voir [`data/README.md`](data/README.md) et [`models/README.md`](models/README.md) pour les détails.
+**📖 Lire impérativement avant de commit du code** : [`docs/LFS_WORKFLOW.md`](docs/LFS_WORKFLOW.md) — guide complet (ajouter un fichier, conventions, troubleshooting).
+
+Voir aussi [`data/README.md`](data/README.md) et [`models/README.md`](models/README.md) pour la structure.
 
 ---
 

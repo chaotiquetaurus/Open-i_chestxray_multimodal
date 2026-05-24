@@ -181,15 +181,19 @@ def label_reports_from_mesh(report_df):
 
 # ── Pipeline ─────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
-    # src/mmmia/text_classification/labeliser.py → racine du repo = 4 niveaux au-dessus
+    # src/mmmia/text_classification/data/labeliser.py → racine 5 niveaux au-dessus
     from pathlib import Path
-    PROJ_ROOT = Path(__file__).resolve().parents[3]
+    PROJ_ROOT = Path(__file__).resolve().parents[4]
     XML_DIR   = str(PROJ_ROOT / "data" / "labeling" / "NLMCXR_reports" / "ecgen-radiology")
     CSV_PATH  = str(PROJ_ROOT / "data" / "labeling" / "new_dataset.csv")
-    OUT_DIR   = PROJ_ROOT / "data" / "text_classification"
-    OUT_DIR.mkdir(parents=True, exist_ok=True)
-    OUT_IMAGE_PATH  = str(OUT_DIR / "dataset_labeled.csv")
-    OUT_REPORT_PATH = str(OUT_DIR / "dataset_reports.csv")
+    # dataset_labeled.csv est partagé (text + image + dicom) → data/shared/
+    SHARED_DIR = PROJ_ROOT / "data" / "shared"
+    SHARED_DIR.mkdir(parents=True, exist_ok=True)
+    OUT_IMAGE_PATH = str(SHARED_DIR / "dataset_labeled.csv")
+    # dataset_reports.csv est text-only → data/text_classification/
+    TEXT_DIR = PROJ_ROOT / "data" / "text_classification"
+    TEXT_DIR.mkdir(parents=True, exist_ok=True)
+    OUT_REPORT_PATH = str(TEXT_DIR / "dataset_reports.csv")
 
     print("Parsing XMLs...")
     mesh_df, report_df = parse_xml_dir(XML_DIR)

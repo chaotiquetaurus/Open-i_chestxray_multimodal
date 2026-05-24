@@ -1,18 +1,18 @@
-"""Configuration du preprocessing"""
+"""Configuration du preprocessing DICOM"""
 
 from pathlib import Path
 
-# Chemins
-PROJECT_DIR = Path(".")
-DATA_DIR = PROJECT_DIR / "fragment_data_set"
-XML_DIR = PROJECT_DIR / "NLMCXR_reports" / "ecgen-radiology"
-CSV_FILE = PROJECT_DIR / "dataset_labeled.csv"
-OUTPUT_CSV = PROJECT_DIR / "dataset_labeled_enriched.csv"
-DICOM_OUTPUT_DIR = PROJECT_DIR / "dicom_preprocessed"
+# src/mmmia/dicom/scripts/config.py → racine 4 niveaux au-dessus
+PROJECT_ROOT = Path(__file__).resolve().parents[4]
 
-# Créer les dossiers s'ils n'existent pas
-for directory in [DICOM_OUTPUT_DIR]:
-    directory.mkdir(exist_ok=True)
+DATA_DIR = PROJECT_ROOT / "data" / "dicom" / "raw" / "fragment_data_set"
+XML_DIR = PROJECT_ROOT / "data" / "labeling" / "NLMCXR_reports" / "ecgen-radiology"
+CSV_FILE = PROJECT_ROOT / "data" / "shared" / "dataset_labeled.csv"
+OUTPUT_CSV = PROJECT_ROOT / "data" / "dicom" / "raw" / "dataset_labeled_enriched.csv"
+DICOM_OUTPUT_DIR = PROJECT_ROOT / "data" / "dicom" / "preprocessed_multiwindow"
+
+# Créer les dossiers de sortie si besoin
+DICOM_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 # Configuration preprocessing DICOM
 IMAGE_SIZE = (256, 256)

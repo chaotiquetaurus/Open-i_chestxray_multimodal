@@ -7,9 +7,11 @@ Backend LFS : **GitLab ENST** (voir `.lfsconfig`).
 
 ```
 data/
+├── shared/
+│   └── dataset_labeled.csv          # Source de vérité labels 12 pathologies
+│                                     # (utilisé par text + image + dicom)
 ├── text_classification/
-│   ├── dataset_labeled.csv          # Rapports radiologiques labellisés (12 pathologies)
-│   └── dataset_reports.csv          # Rapports bruts (texte uniquement)
+│   └── dataset_reports.csv          # Rapports bruts (text uniquement)
 │
 ├── image_classification/
 │   ├── dataset/                     # Train/Test split d'images PNG (échantillon)
