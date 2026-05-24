@@ -109,3 +109,6 @@ htmlcov/
 .pytest_cache/
 coverage.xml
 *.cover
+
+# Ancien dossier pré-restructuration (contient venv Windows + résidus, à supprimer du disque)
+"image classification (png)/"
