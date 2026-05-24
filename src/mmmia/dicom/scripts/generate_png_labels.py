@@ -8,9 +8,12 @@ import re
 import os
 from pathlib import Path
 
-# Configuration
-CSV_PATH = r"c:\Users\ahmed\Desktop\artishow\MM-MIA\projet_dicom\dataset_labeled_enriched.csv"
-OUTPUT_DIR = r"c:\Users\ahmed\Desktop\artishow\MM-MIA\projet_dicom"
+# Racine du repo : 4 niveaux au-dessus de ce script (src/mmmia/dicom/scripts/)
+PROJECT_ROOT = Path(__file__).resolve().parents[4]
+
+CSV_PATH = PROJECT_ROOT / "data" / "dicom" / "raw" / "dataset_labeled_enriched.csv"
+OUTPUT_DIR = PROJECT_ROOT / "data" / "dicom" / "metadata"
+OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 # Liste des PNG (copiée de l'utilisateur)
 png_list = """1028_IM-0022-2001_multiwindow.png
