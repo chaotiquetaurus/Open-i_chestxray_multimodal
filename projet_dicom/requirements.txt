@@ -1,6 +1,0 @@
-pydicom==2.4.3
-numpy==1.26.2
-pandas==2.1.1
-opencv-python==4.8.0.74
-scipy==1.11.2
-tqdm==4.67.0
