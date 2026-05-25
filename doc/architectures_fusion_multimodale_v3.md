@@ -8,14 +8,18 @@ Ce document recense les **quatre familles d'architectures** utilisées pour comb
 
 | Famille | Idée centrale | Référence principale | Lieu de publication | Responsable |
 |---|---|---|---|---|
-| **1. Cross-attention bidirectionnelle** | Deux encodeurs séparés qui s'enrichissent mutuellement via cross-attention | TransCheX (Hatamizadeh et al., 2022) | MONAI / NVIDIA | |
+| **1. Cross-attention bidirectionnelle** | Deux encodeurs séparés qui s'enrichissent mutuellement via cross-attention | TransCheX c.f lr truc du prof, LXMERT (Tan & Bansal, EMNLP 2019), VILBERT (Lu et al., NeurIPS 2019) | MONAI / NVIDIA | |
 | **2. Single-stream transformer** | Tokens image et texte concaténés dans une séquence unique | MMBT (Kiela et al., 2019) + Jacenków et al. (2022) + CaMCheX (Sloan et al., 2025) | ISBI 2022 / ML4H 2025 | |
 | **3. Latent query distillation** | N queries apprenables qui distillent les deux modalités via cross-attention | Khader et al. (2023) + BLIP-2 (Li et al., 2023) | Radiology (RSNA) / ICML 2023 | Hugo |
-| **4. Projector + LLM** | Tokens visuels projetés et prepended à l'entrée d'un LLM | LLaVA-Med (Li et al., 2023) | NeurIPS 2023 (Spotlight) | |
+| **4. Projector + LLM** | Tokens visuels projetés et prepended à l'entrée d'un LLM | LLaVA-Med (Li et al., 2023) et DeepStack (meng et al.) | NeurIPS 2023 (Spotlight) | |
 
 ---
 
 ## Famille 1 — Cross-attention bidirectionnelle
+
+###Commentaire
+
+Ca a pas l'air facile facile à implementer par, par contre les modèles ne sont pas figé donc faut TOUT rentrainer. A voir cu que c'est l'archiecture à recopier ce mettre à deux dessus c'est pas mal.
 
 ### Principe
 
@@ -25,10 +29,12 @@ La classification se fait généralement sur le `[CLS]` du flux texte, ou par co
 
 ### Référence
 
-**TransCheX** — Hatamizadeh, Sengupta et al., *"Multimodal Transformer for Joint Chest X-Ray and Radiology Report Classification"*
+LXMERT (Tan & Bansal, EMNLP 2019), VILBERT (Lu et al., NeurIPS 2019)
 
 - Repo : [`Project-MONAI/research-contributions/TransChex`](https://github.com/Project-MONAI/research-contributions/tree/main/TransChex)
 - Mécanisme central : `BertMixedLayer` contenant les deux cross-attentions parallèles
+- VILBERT : https://arxiv.org/abs/1908.02265
+- LXMERT : https://arxiv.org/abs/1908.07490
 - Intégré au framework MONAI
 
 ### Avantages et limites
@@ -41,6 +47,11 @@ La classification se fait généralement sur le `[CLS]` du flux texte, ou par co
 ---
 
 ## Famille 2 — Single-stream transformer
+
+### Commentaire
+
+Implé relativement facile,le dernier article montre une amelioration de FOU avec la multimodalité (à prendre avec des pincettes vuque c'est facile de se perdre,et c'est possible qu'il est mis les reponses en entrées, l'article à aucune citation). C'est ce qui a le plus de chance de marcher selon moi.
+GROS avantages, ça permet aussi de diviser les images en "patch" et du coup de travailler avec les dicom plus facilement, à voir : Cf : https://arxiv.org/abs/2103.10504 : UNETR. 
 
 ### Principe
 
@@ -82,6 +93,10 @@ Concrètement, la séquence d'entrée ressemble à : `[CLS_img] [patch_1] ... [p
 
 ## Famille 3 — Latent query distillation (Perceiver / Q-Former)
 
+###Commentaire
+
+L'implé va surment être un petit enfer. par contre les derniers papiers bien cités qui font comme nous du multmodal texte images utilisent souvant cette architecture. En plus c'est assez prometeur pour avoir de l'explicapibilité si on sacrifie un peu de êrf en alignant les query avec les labels. (On associe Normal à une query distillé, Pneumonia à une autre etc...)
+
 ### Principe
 
 Un petit nombre de **query embeddings apprenables** (typiquement 32 à 64) sont introduits. Ces queries font de la **cross-attention sur les features image et sur les features texte** : elles "interrogent" les deux modalités pour en extraire l'information pertinente à la tâche.
@@ -122,6 +137,11 @@ Les queries passent par plusieurs couches alternant self-attention (entre querie
 ---
 
 ## Famille 4 — Projector + LLM
+
+###Commentaire
+
+-Implé super simple a priori, c'est juste un encoder decoder, je pense que la seule façon que ça marche bien c'est que le llm utilisé soit TRES gros (typiquement gemma par exemple ça irais bien, mais faut voir ce qu'on peut faire tourner), on peut utiliser des llm plus gros vu que ici le lllm n'est jamais entrainé seulement utilisé. La seule partie entainé c'est la projection.
+-par contre si on ceut faire plus poussé, (pas dis que ça marche mieux mais bon) on peut regarder deepstack qui au lieux de juste encodé les token image puis les faires process par le llm, on les distille petit à petit dans le context du llm, cependant ça demande de réentrainer le llm, donc pas sur que ça passe.
 
 ### Principe
 
@@ -205,6 +225,13 @@ Le choix dépend de trois facteurs :
 
 4. **CaMCheX** — Sloan, P., Simpson, E., Mirmehdi, M. *Clinically-aligned Multi-modal Chest X-ray Classification*. ML4H 2025, PMLR vol. 297. arXiv:2511.09581.
    Repo : https://github.com/phillipSloan/CaMCheX
+
+**ce qui sont bien pr la partie 2 :**
+
+-LXMERT https://arxiv.org/abs/1908.07490
+
+-VILBERT : https://arxiv.org/abs/1908.02265
+
 
 5. **Khader / LSMT** — Khader, F., Müller-Franzes, G., Wang, T. et al. *Multimodal Deep Learning for Integrating Chest Radiographs and Clinical Parameters: A Case for Transformers*. Radiology, 309(1):e230806, 2023. DOI : 10.1148/radiol.230806
    Repo : https://github.com/FirasGit/lsmt
