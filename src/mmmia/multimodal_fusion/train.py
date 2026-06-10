@@ -26,9 +26,12 @@ from iterstrat.ml_stratifiers import MultilabelStratifiedShuffleSplit
 from sklearn.metrics import roc_auc_score
 
 # ── Chemins vers les modules existants ──────────────────────────────────────
+# Convention du repo (cf. text_classification/scripts) : on insère le dossier du
+# module courant + celui de text_classification dans sys.path, puis import bare.
 ROOT = os.path.dirname(os.path.abspath(__file__))
-TEXT_ROOT = os.path.join(ROOT, "..", "Text classification")
-sys.path.insert(0, TEXT_ROOT)
+TEXT_ROOT = os.path.join(ROOT, "..", "text_classification")
+sys.path.insert(0, ROOT)        # model.py, dataset.py (locaux)
+sys.path.insert(0, TEXT_ROOT)   # models/ (BERTForMLM)
 
 from models import BERTForMLM    # noqa: E402  (import après sys.path)
 from model   import MultimodalFusion

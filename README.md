@@ -28,6 +28,7 @@ MM-MIA/
 │   ├── dicom/                  # Pipeline DICOM (preprocessing, volumes 3D)
 │   │   ├── notebooks/          # Preprocessing, fine-tuning DenseNet/3D...
 │   │   └── scripts/            # CLI de preprocessing
+│   ├── multimodal_fusion/      # Fusion image+texte (ViT + BERT, cross-attention)
 │   ├── api/                    # API FastAPI (medical-api)
 │   └── labeling/               # Outils de labellisation (Open-I XML)
 │
