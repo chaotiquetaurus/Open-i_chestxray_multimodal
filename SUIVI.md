@@ -393,3 +393,22 @@ enzo : use the .pth of the other's model to check if everything works with the m
 
 **Next Steps for the Following Session:**
 
+
+### Session 10 [10/06/26]
+
+**Activities Completed before session:** 
+
+
+**Session Objectives:**
+elias : again learning about single stream transformer in order to implement one multimodal head
+
+
+**Activities Completed:**
+
+
+**Decisions / Results:**
+
+
+
+**Next Steps for the Following Session:**
+elias : implementing this single stream transformer (see branch1 before merging) 
