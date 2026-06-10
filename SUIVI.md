@@ -350,11 +350,23 @@ Enzo : Made a simple API and tried if it works with enzo's model : https://test-
 **Session Objectives:**
 Enzo: work with the others with the multimodal goals.
 
+Aziz: 
+- Read papers on multimodal fusion via bidirectional cross-attention:
+  - **LXMERT** (Tan & Bansal, EMNLP 2019): two separate encoders (text + image) that mutually enrich each other via cross-attention, with a final fusion layer
+  - **ViLBERT** (Lu et al., NeurIPS 2019): dual-stream architecture with cross-attention between visual and text tokens, a precursor to bimodal approaches
+  - **TransCheX** (cf. supervisor reference): adaptation of these principles to the chest X-ray radiology domain
+  - Explored **MONAI (NVIDIA)** as a potential framework for medical data handling and multimodal training
+
+
+
 **Activities Completed:**
 djouhoud: -  fine-tuning of a DenseNet-121 model using a preprocessed dataset (windowing applied and reduced image size).
 - Training was performed for half of the data set and 5 epochs to test whether the model can run and converge successfully.
 - start to preprocess the dataset for the volume methode 
 enzo : discuss about how we should do the multimodal implementation. Read about that
+
+Aziz: 
+- Implemented `multimodal_fusion/` module combining the custom text encoder (BERT MLM, d=256) and ViT (`codewithdark/vit-chest-xray`, d=768) via bidirectional cross-attention projected to d=512
 
 **Decisions / Results:**
 Djouhoud: The windowing method is not suitable for Google Colab, as it significantly increases training time even when using only half of the dataset, and the resulting metrics are not satisfactory.
