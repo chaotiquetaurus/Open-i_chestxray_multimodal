@@ -63,9 +63,10 @@ MM-MIA/
 ## 🚀 Installation
 
 ### Prérequis
-- Python ≥ 3.10
+- **Python 3.12 recommandé** (le projet supporte ≥ 3.10, mais **évitez 3.14** : pas encore de wheels `torch`).
+  Debian/Ubuntu : `sudo apt install python3.12 python3.12-venv`
 - [Git LFS](https://git-lfs.com/) (`sudo apt install git-lfs && git lfs install`)
-- CUDA (optionnel, pour entraînement GPU)
+- CUDA (optionnel, pour entraînement GPU — voir note plus bas)
 
 ### Cloner le repo
 ```bash
@@ -75,16 +76,33 @@ git lfs pull   # télécharge datasets et modèles (peut prendre du temps)
 ```
 
 ### Setup environnement
+
+Le venv **n'est pas versionné** (cf. `.gitignore`) : chacun le recrée localement.
+
+**Option A — `uv` (recommandé, rapide, gère Python tout seul)**
 ```bash
-python -m venv venv
-source venv/bin/activate
-pip install -e .[dev,notebook]   # installe mmmia en mode editable + dev tools + jupyter
+curl -LsSf https://astral.sh/uv/install.sh | sh   # installe uv une fois (sans sudo)
+uv venv --python 3.12 .venv                       # crée le venv (+ télécharge Python 3.12 si besoin)
+source .venv/bin/activate
+uv pip install -r requirements-lock.txt           # repro exacte des versions de l'équipe
+# … ou, pour développer le package mmmia :
+uv pip install -e ".[all]"                        # editable + dev tools + jupyter
 ```
 
-Pour reproduire **exactement** les versions de l'équipe :
+**Option B — `pip` classique**
 ```bash
-pip install -r requirements-lock.txt
+python3.12 -m venv .venv          # ⚠️ pas python3.14 (wheels torch absents) ; Windows : .venv\Scripts\activate
+source .venv/bin/activate
+pip install --upgrade pip
+pip install -r requirements-lock.txt   # repro exacte
+# … ou : pip install -e ".[dev,notebook]"
 ```
+
+> **`requirements-lock.txt`** = versions figées → privilégiez-le pour simplement faire tourner le projet.
+> **`pip install -e ".[all]"`** (depuis `pyproject.toml`) = pour développer (mode editable + dev + notebook).
+
+> **GPU/CUDA** : le lock fige `torch==2.12.0` (build CPU/portable par défaut). Pour le build CUDA, installez torch via l'index PyTorch, ex. :
+> `pip install torch --index-url https://download.pytorch.org/whl/cu124`
 
 ---
 
