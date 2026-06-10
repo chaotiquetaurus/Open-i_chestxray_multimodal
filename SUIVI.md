@@ -405,6 +405,78 @@ elias : again learning about single stream transformer in order to implement one
 
 **Activities Completed:**
 
+Aziz: Built the `multimodal_fusion/` module that combines a custom BERT text encoder and a Vision Transformer (ViT) image encoder into a single multi-label classifier for 21 chest pathologies, using bidirectional cross-attention as the fusion mechanism.
+
+**`BidirectionalCrossAttention`**
+
+Both modalities are projected to a common space (d=512) before attention:
+
+- Text tokens `(B, L, 256)` → Linear projection → `(B, L, 512)`
+- Image tokens `(B, 197, 768)` → Linear projection → `(B, 197, 512)`
+- Two cross-attention directions computed **in parallel**:
+  - Text → Image (`t2i`): text queries attend over image keys/values
+  - Image → Text (`i2t`): image queries attend over text keys/values
+- Each branch has a residual connection, FFN (512 → 1024 → 512), and LayerNorm
+
+**`MultimodalFusion`**
+
+| Component | Details |
+|-----------|---------|
+| Text encoder | Custom BERT (d=256, 6 layers, 8 heads, RoPE+RMSNorm+SiLU) — 4.3M params |
+| Image encoder | `codewithdark/vit-chest-xray` ViT-B/16 (d=768, 197 tokens) — 86M params |
+| Cross-attention | BidirectionalCrossAttention, 8 heads, d_model=512 |
+| Text pooling | CLS token (index 0) of fused text sequence |
+| Image pooling | Learned soft-attention over all 197 fused image tokens |
+| Classification head | Linear(1024 → 512) + LayerNorm + GELU + Dropout + Linear(512 → 21) |
+| **Total parameters** | **95,931,925** |
+
+
+### Results
+
+**Training curve (key epochs):**
+
+| Epoch | Phase | Val AUC |
+|-------|-------|---------|
+| 1 | Frozen | 0.6247 |
+| 3 | Frozen | 0.9206 |
+| 4 | Unfrozen | 0.9596 |
+| 8 | Unfrozen | 0.9879 ★ |
+| 15 | Unfrozen | 0.9881 ★ best |
+| 22 | Unfrozen | early stop |
+
+**Per-class AUC on test set (968 samples):**
+
+| Pathology | AUC |
+|-----------|-----|
+| Atelectasis | 0.9875 |
+| Cardiomegaly | 0.9887 |
+| Effusion | 0.9731 |
+| Pneumonia | 0.9670 |
+| Pneumothorax | 0.9969 |
+| Edema | 0.9922 |
+| Emphysema | 0.9604 |
+| Fibrosis | 0.9550 |
+| Infiltration | 0.9839 |
+| Mass | 0.9946 |
+| Nodule | 0.9918 |
+| Hernia | 0.9997 |
+| Fracture | 0.9922 |
+| Pleural_Thickening | 1.0000 |
+| Opacity | 0.9999 |
+| Consolidation | 0.9936 |
+| Granuloma | 0.9999 |
+| Calcinosis | 0.9974 |
+| Scoliosis | 0.9950 |
+| Atherosclerosis | 1.0000 |
+| Normal | 0.9920 |
+| **Mean AUC** | **0.9886** |
+
+**Best val AUC: 0.9881 — Test AUC: 0.9886**
+
+Checkpoint saved at: `multimodal_fusion/checkpoints/multimodal_fusion.pt`
+More documentation can be found on `multimodal_fusion/checkpoints/README.md`
+
+
 
 **Decisions / Results:**
 
