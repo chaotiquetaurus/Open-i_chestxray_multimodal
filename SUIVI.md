@@ -397,15 +397,18 @@ enzo : use the .pth of the other's model to check if everything works with the m
 ### Session 10 [10/06/26]
 
 **Activities Completed before session:** 
-
+enzo : use the .pth of the other's model to check if everything works with the model done. It works, not so good, AUC very low.
 
 **Session Objectives:**
-elias : again learning about single stream transformer in order to implement one multimodal head
+elias : again learning about single stream transformer in order to implement one multimodal head.
+enzo: create the flyer for the presentation
+
 
 
 **Activities Completed:**
 
 Aziz: Built the `multimodal_fusion/` module that combines a custom BERT text encoder and a Vision Transformer (ViT) image encoder into a single multi-label classifier for 21 chest pathologies, using bidirectional cross-attention as the fusion mechanism.
+enzo : the canva of the Flyer has been created and some information has already been written.
 
 **`BidirectionalCrossAttention`**
 
@@ -484,3 +487,4 @@ More documentation can be found on `multimodal_fusion/checkpoints/README.md`
 
 **Next Steps for the Following Session:**
 elias : implementing this single stream transformer (see branch1 before merging) 
+enzo : complete the flyer and finalise the API with the new model Aziz made.
