@@ -283,13 +283,16 @@ Hugo:
 
 **Activities Completed before session:**
 Enzo: Implement torch.lightning to the codes so that it is easier to use the GPUs. exam revision
+hugo : exam revision.
 
 **Session Objectives:**
 Enzo : nothing due to the exams
+hugo : nothing due to the exams.
 
 
 **Activities Completed:**
 -Aziz: Worked on preparing the presentation for the intermediate evaluation.
+-hugo : exam period, nothing substantial. On the side, started reading about how text and image can be combined (early vs late fusion, joint embeddings) to prepare the multimodal phase.
 
 
 **Decisions / Results:**
@@ -302,18 +305,22 @@ Enzo : nothing due to the exams
 
 **Activities Completed before session:**
 Enzo: Try to implement finetuning (better) in our own created model (juste to see, btw we will switch to the model developped with Aziz) to compare and se the differences with a model not so good, exam revision
+hugo : exam revision.
 
 **Session Objectives:**
 Enzo : nothing due to the exams
+hugo : nothing due to the exams.
 
 
 **Activities Completed:**
+-hugo : still exam period. Kept surveying the multimodal fusion literature on the side, building a first mental map of the main families of approaches (concatenation, cross-attention, single-stream transformers) before diving deeper next sessions.
 
 
 
 **Decisions / Results:**
 
 **Next Steps for the Following Session:**
+hugo : start a serious, structured bibliography on multimodal fusion methods.
 
 ### Session 8 [05/05/26]
 
@@ -325,14 +332,17 @@ Start reading the article mentionned in the video : Learning Transferable Visual
 Aziz: Used also the learning material of Stanford CS224N to learn about multimodal implemebtatiob.
 Read several blog posts about techniques we can use of the multimodal implementation
 Djouhoud: Downloaded the dataset to the Telecom GPU server and verified the total number of DICOM files.
+hugo : finished the exams. Started a structured bibliography on multimodal fusion, reading the foundational papers (CLIP for contrastive image-text alignment, ViLBERT/LXMERT for dual-stream cross-attention).
 
 
 **Session Objectives:**
  - Put averything together and for the planning for the next steps
 Djouhoud: Preprocessed DICOM files using the multi-window windowing method on the Telecom GPU server.
+hugo : compare the main fusion paradigms and figure out which one fits our image+report setup best.
 **Activities Completed:**
 Enzo : discuss about what I've learned with the others and focus on the planning for the next sessions
 Aziz: Read online blogs about multi-model implementation "Building a Multimodal Classifier in PyTorch: A Step-by-Step Guide".
+hugo : went deeper into the fusion taxonomy — early fusion (concat of features), late fusion (decision-level), and intermediate fusion via cross-attention. Took notes on the trade-offs (parameter count, where the two modalities actually interact, alignment requirements). Identified cross-attention as the most promising direction for our case.
 
 **Decisions / Results:**
 We decided to work one more week on the Deecom but give up if it still doesn't work, for the Fusion Phase,we shared what we know and organize what people are going to do 
@@ -367,41 +377,50 @@ enzo : discuss about how we should do the multimodal implementation. Read about 
 
 Aziz: 
 - Implemented `multimodal_fusion/` module combining the custom text encoder (BERT MLM, d=256) and ViT (`codewithdark/vit-chest-xray`, d=768) via bidirectional cross-attention projected to d=512
+hugo : continued the bibliography and synthesized everything into a written document `docs/architectures_fusion_multimodale_v3.md`, an extensive review of the fusion methods (single-stream vs dual-stream, cross-attention variants, Q-Former / BLIP-2 style querying, contrastive pretraining). The goal is to give the whole team a shared reference to choose our architecture from.
 
 **Decisions / Results:**
 Djouhoud: The windowing method is not suitable for Google Colab, as it significantly increases training time even when using only half of the dataset, and the resulting metrics are not satisfactory.
+hugo : the document converges on two candidates for my part: bidirectional cross-attention (close to what Aziz started) and a Q-Former style module that learns a small set of query tokens to extract image information conditioned on text.
 
 
 **Next Steps for the Following Session:**
 enzo : continue to think of ways to improve our multimodal implementation.
 djouhoud : focusing in the volume methode
+hugo : clean up and restructure the repo so the multimodal work has a proper home, then start my own fusion implementation.
 
 ### Session 9 [27/05/26]
 
 **Activities Completed before session:** 
 enzo : improve the model : The code trains a multimodal model that combines a chest X‑ray processed by EfficientNet‑B0 with TF‑IDF text features from clinical reports. The two embeddings are concatenated and passed through a fusion MLP that predicts 14 thoracic pathologies. Training happens in two stages: first the fusion head is learned while the image branch is frozen, then the entire network is fine‑tuned ----> see the branch enzo_multimodal for now.
+hugo : started the big refactor of the repo (the codebase had grown into a pile of loose notebooks and folders, hard to reuse across the team).
 
 **Session Objectives:**
 enzo : use the .pth of the other's model to check if everything works with the model done.
+hugo : turn the scattered scripts/notebooks into a clean, installable project.
 
 **Activities Completed:**
-
+hugo : did a full refactor towards a monorepo structure. Created the `mmmia` package under `src/mmmia/` (text encoder, image encoder, fusion, pretraining utilities), moved the figures into `docs/`, and integrated the existing `multimodal_fusion` work into the package instead of having it live as standalone notebooks. Cleaned up imports so every member can `import mmmia` instead of copy-pasting code between notebooks.
 
 **Decisions / Results:**
+hugo : the project is now a proper Python package; this is the new shared base for everyone (branch `refactor/clean-architecture` then merged). Still need to regenerate a complete lockfile so installs are reproducible.
 
 
 
 **Next Steps for the Following Session:**
+hugo : finish stabilising the install (requirements lock) and start my own fusion implementation. Also investigate the suspiciously high AUC scores we are getting.
 
 
 ### Session 10 [10/06/26]
 
 **Activities Completed before session:** 
 enzo : use the .pth of the other's model to check if everything works with the model done. It works, not so good, AUC very low.
+hugo : finalised the refactor — regenerated a complete `requirements-lock.txt` with install instructions so the project is reproducible for everyone.
 
 **Session Objectives:**
 elias : again learning about single stream transformer in order to implement one multimodal head.
 enzo: create the flyer for the presentation
+hugo : investigate the suspiciously high ~0.96–0.99 AUC of the fusion model (possible data leak), then start my own fusion architecture.
 
 
 
@@ -409,6 +428,7 @@ enzo: create the flyer for the presentation
 
 Aziz: Built the `multimodal_fusion/` module that combines a custom BERT text encoder and a Vision Transformer (ViT) image encoder into a single multi-label classifier for 21 chest pathologies, using bidirectional cross-attention as the fusion mechanism.
 enzo : the canva of the Flyer has been created and some information has already been written.
+hugo : started digging into the potential data leak between MIMIC-CXR (the CXR set used to pretrain the encoders) and Open-i (our eval set). The almost-perfect AUC (several classes at 0.99–1.00, mean ~0.98–0.96) is too good to be true for chest X-ray multi-label classification, and a leak between the pretraining and evaluation distributions would exactly explain it. Began checking for overlap (same patients / studies leaking across the pretrain→finetune split) and how the train/test split is built. In parallel, started my own part of the multimodal fusion: a first implementation of a Q-Former architecture (a small set of learnable query tokens that attend over the image features to extract a compact, text-conditioned visual representation), as an alternative to the bidirectional cross-attention fusion.
 
 **`BidirectionalCrossAttention`**
 
@@ -482,9 +502,11 @@ More documentation can be found on `multimodal_fusion/checkpoints/README.md`
 
 
 **Decisions / Results:**
+hugo : strong suspicion that the ~0.96+ AUC is at least partly inflated by a leak between MIMIC-CXR and Open-i — needs to be confirmed before we trust/communicate these numbers. The Q-Former branch is at an early prototype stage.
 
 
 
 **Next Steps for the Following Session:**
 elias : implementing this single stream transformer (see branch1 before merging) 
 enzo : complete the flyer and finalise the API with the new model Aziz made.
+hugo : confirm (or rule out) the MIMIC-CXR / Open-i leak and re-evaluate the fusion model on a clean split; continue the Q-Former implementation.
