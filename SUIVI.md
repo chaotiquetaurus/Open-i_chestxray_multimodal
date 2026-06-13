@@ -378,16 +378,18 @@ enzo : discuss about how we should do the multimodal implementation. Read about 
 Aziz: 
 - Implemented `multimodal_fusion/` module combining the custom text encoder (BERT MLM, d=256) and ViT (`codewithdark/vit-chest-xray`, d=768) via bidirectional cross-attention projected to d=512
 hugo : continued the bibliography and synthesized everything into a written document `docs/architectures_fusion_multimodale_v3.md`, an extensive review of the fusion methods (single-stream vs dual-stream, cross-attention variants, Q-Former / BLIP-2 style querying, contrastive pretraining). The goal is to give the whole team a shared reference to choose our architecture from.
+Aziz: -Transfered his code from the main branch to the new refactored branch created by hugo before the final merge.
 
 **Decisions / Results:**
 Djouhoud: The windowing method is not suitable for Google Colab, as it significantly increases training time even when using only half of the dataset, and the resulting metrics are not satisfactory.
 hugo : the document converges on two candidates for my part: bidirectional cross-attention (close to what Aziz started) and a Q-Former style module that learns a small set of query tokens to extract image information conditioned on text.
-
+Aziz: Satisfied with the initial implementation and excited to keep working on finishing the code.
 
 **Next Steps for the Following Session:**
 enzo : continue to think of ways to improve our multimodal implementation.
 djouhoud : focusing in the volume methode
 hugo : clean up and restructure the repo so the multimodal work has a proper home, then start my own fusion implementation.
+Aziz: Start brainstorm ideas for the poster design+keep working on the multi-modal implementation.
 
 ### Session 9 [27/05/26]
 
@@ -402,6 +404,9 @@ hugo : turn the scattered scripts/notebooks into a clean, installable project.
 **Activities Completed:**
 hugo : did a full refactor towards a monorepo structure. Created the `mmmia` package under `src/mmmia/` (text encoder, image encoder, fusion, pretraining utilities), moved the figures into `docs/`, and integrated the existing `multimodal_fusion` work into the package instead of having it live as standalone notebooks. Cleaned up imports so every member can `import mmmia` instead of copy-pasting code between notebooks.
 
+Aziz: Worked on writing the code for the bidirectionnal multi modal approach. In particular, chose to write python scripts instead of jupyter notebooks to have production level code. Started running the code on Colab GPU.
+
+
 **Decisions / Results:**
 hugo : the project is now a proper Python package; this is the new shared base for everyone (branch `refactor/clean-architecture` then merged). Still need to regenerate a complete lockfile so installs are reproducible.
 
@@ -410,6 +415,7 @@ hugo : the project is now a proper Python package; this is the new shared base f
 **Next Steps for the Following Session:**
 hugo : finish stabilising the install (requirements lock) and start my own fusion implementation. Also investigate the suspiciously high AUC scores we are getting.
 
+Aziz: Finish the multi-modal implementation and get the results.
 
 ### Session 10 [10/06/26]
 
@@ -426,10 +432,11 @@ hugo : investigate the suspiciously high ~0.96–0.99 AUC of the fusion model (p
 
 **Activities Completed:**
 
-Aziz: Built the `multimodal_fusion/` module that combines a custom BERT text encoder and a Vision Transformer (ViT) image encoder into a single multi-label classifier for 21 chest pathologies, using bidirectional cross-attention as the fusion mechanism.
 enzo : the canva of the Flyer has been created and some information has already been written.
 hugo : started digging into the potential data leak between MIMIC-CXR (the CXR set used to pretrain the encoders) and Open-i (our eval set). The almost-perfect AUC (several classes at 0.99–1.00, mean ~0.98–0.96) is too good to be true for chest X-ray multi-label classification, and a leak between the pretraining and evaluation distributions would exactly explain it. Began checking for overlap (same patients / studies leaking across the pretrain→finetune split) and how the train/test split is built. In parallel, started my own part of the multimodal fusion: a first implementation of a Q-Former architecture (a small set of learnable query tokens that attend over the image features to extract a compact, text-conditioned visual representation), as an alternative to the bidirectional cross-attention fusion.
 
+
+Aziz: Built the `multimodal_fusion/` module that combines a custom BERT text encoder and a Vision Transformer (ViT) image encoder into a single multi-label classifier for 21 chest pathologies, using bidirectional cross-attention as the fusion mechanism.
 **`BidirectionalCrossAttention`**
 
 Both modalities are projected to a common space (d=512) before attention:
@@ -500,13 +507,15 @@ Checkpoint saved at: `multimodal_fusion/checkpoints/multimodal_fusion.pt`
 More documentation can be found on `multimodal_fusion/checkpoints/README.md`
 
 
+Aziz: Worked on the poster design using Canvas, created figures that represent the results of his multi modal approach which can be found on the folder `figures`
 
 **Decisions / Results:**
 hugo : strong suspicion that the ~0.96+ AUC is at least partly inflated by a leak between MIMIC-CXR and Open-i — needs to be confirmed before we trust/communicate these numbers. The Q-Former branch is at an early prototype stage.
 
-
+Aziz: Happy with the results of the multi-modal bidirectional cross attention approach. 
 
 **Next Steps for the Following Session:**
 elias : implementing this single stream transformer (see branch1 before merging) 
 enzo : complete the flyer and finalise the API with the new model Aziz made.
 hugo : confirm (or rule out) the MIMIC-CXR / Open-i leak and re-evaluate the fusion model on a clean split; continue the Q-Former implementation.
+Aziz: Continue working on the poster
