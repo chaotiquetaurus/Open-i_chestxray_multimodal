@@ -357,8 +357,6 @@ Djouhoud: Explore alternative DICOM processing technique using 3D volumetric rep
 
 
 Enzo : Made a simple API and tried if it works with enzo's model : https://test-api-2-production.up.railway.app/docs   . The Api take in consideration the model according to the dictionnary containing all the values each neuron has after training the model. To use the API with another model, we only need to change the `model_full.pth`. The API use `Dockers`, to containes things and the deployement has been mage using `Railway`
-**Session Objectives:**
-Enzo: work with the others with the multimodal goals.
 
 Aziz: 
 - Read papers on multimodal fusion via bidirectional cross-attention:
@@ -366,6 +364,10 @@ Aziz:
   - **ViLBERT** (Lu et al., NeurIPS 2019): dual-stream architecture with cross-attention between visual and text tokens, a precursor to bimodal approaches
   - **TransCheX** (cf. supervisor reference): adaptation of these principles to the chest X-ray radiology domain
   - Explored **MONAI (NVIDIA)** as a potential framework for medical data handling and multimodal training
+
+**Session Objectives:**
+Enzo: work with the others with the multimodal goals.
+
 
 
 
