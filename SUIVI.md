@@ -521,3 +521,18 @@ elias : implementing this single stream transformer (see branch1 before merging)
 enzo : complete the flyer and finalise the API with the new model Aziz made.
 hugo : confirm (or rule out) the MIMIC-CXR / Open-i leak and re-evaluate the fusion model on a clean split; continue the Q-Former implementation.
 Aziz: Continue working on the poster
+
+### Session 11 [15/06/26]
+
+**Activities Completed before session:** 
+
+**Session Objectives:**
+
+**Activities Completed:**
+-Aziz: Worked on the poster along the other teammates, Made sure it was submitted before tonight's deadline.
+
+
+**Decisions / Results:**
+
+
+**Next Steps for the Following Session:**
