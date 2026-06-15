@@ -530,7 +530,7 @@ Aziz: Continue working on the poster
 
 **Activities Completed:**
 -Aziz: Worked on the poster along the other teammates, Made sure it was submitted before tonight's deadline.
-
+-We also changed the date of our meeting with the professor from this friday to Tuesday 23rd.
 
 **Decisions / Results:**
 -Poster sent at time and reviewed by the professor 
