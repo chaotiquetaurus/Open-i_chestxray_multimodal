@@ -533,6 +533,6 @@ Aziz: Continue working on the poster
 
 
 **Decisions / Results:**
-
+-Poster sent at time and reviewed by the professor 
 
 **Next Steps for the Following Session:**
