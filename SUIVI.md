@@ -536,3 +536,4 @@ Aziz: Continue working on the poster
 -Poster sent at time and reviewed by the professor 
 
 **Next Steps for the Following Session:**
+-Aziz: Prepare a presentation for the next meeting with the professor
