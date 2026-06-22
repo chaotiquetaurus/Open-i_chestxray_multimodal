@@ -103,3 +103,6 @@ Both modalities are projected to a common space (d=512) before attention:
 **Best val AUC: 0.9881 — Test AUC: 0.9886**
 
 Checkpoint saved at: `checkpoints/multimodal_fusion.pt`
+
+Checkpoint for the multimodal_fusion + tokenizer: 
+https://drive.google.com/drive/folders/1NBXp-Foy-2Rym3vY2mclVxde-ZcBop7t?usp=sharing
