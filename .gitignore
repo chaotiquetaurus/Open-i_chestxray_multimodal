@@ -112,3 +112,10 @@ coverage.xml
 
 # Ancien dossier pré-restructuration (contient venv Windows + résidus, à supprimer du disque)
 "image classification (png)/"
+
+# ============================================================
+# Gros datasets sortis de Git LFS — gardés en local uniquement
+# (partage hors git : drive partagé, etc.). Voir docs/LFS_WORKFLOW.md
+# ============================================================
+data/image_classification/train.zip
+data/image_classification/test.zip
