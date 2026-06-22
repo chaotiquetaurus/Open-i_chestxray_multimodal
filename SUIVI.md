@@ -284,6 +284,7 @@ Hugo:
 **Activities Completed before session:**
 Enzo: Implement torch.lightning to the codes so that it is easier to use the GPUs. exam revision
 hugo : exam revision.
+djouhoud: improve the dicom  model
 
 **Session Objectives:**
 Enzo : nothing due to the exams
@@ -310,7 +311,7 @@ hugo : exam revision.
 **Session Objectives:**
 Enzo : nothing due to the exams
 hugo : nothing due to the exams.
-
+djouhoud: nothing due to the exams
 
 **Activities Completed:**
 -hugo : still exam period. Kept surveying the multimodal fusion literature on the side, building a first mental map of the main families of approaches (concatenation, cross-attention, single-stream transformers) before diving deeper next sessions.
@@ -437,6 +438,8 @@ hugo : investigate the suspiciously high ~0.96–0.99 AUC of the fusion model (p
 enzo : the canva of the Flyer has been created and some information has already been written.
 hugo : started digging into the potential data leak between MIMIC-CXR (the CXR set used to pretrain the encoders) and Open-i (our eval set). The almost-perfect AUC (several classes at 0.99–1.00, mean ~0.98–0.96) is too good to be true for chest X-ray multi-label classification, and a leak between the pretraining and evaluation distributions would exactly explain it. Began checking for overlap (same patients / studies leaking across the pretrain→finetune split) and how the train/test split is built. In parallel, started my own part of the multimodal fusion: a first implementation of a Q-Former architecture (a small set of learnable query tokens that attend over the image features to extract a compact, text-conditioned visual representation), as an alternative to the bidirectional cross-attention fusion.
 
+djouhoud: setup the telecom's volume  for the dicom volume preprocess. 
+Solve the git access problem 
 
 Aziz: Built the `multimodal_fusion/` module that combines a custom BERT text encoder and a Vision Transformer (ViT) image encoder into a single multi-label classifier for 21 chest pathologies, using bidirectional cross-attention as the fusion mechanism.
 **`BidirectionalCrossAttention`**
@@ -532,7 +535,7 @@ Aziz: Continue working on the poster
 -Aziz: Worked on the poster along the other teammates, Made sure it was submitted before tonight's deadline.
 -We also changed the date of our meeting with the professor from this friday to Tuesday 23rd.
 - Enzo: finished the poster with the consideration of Nikolai, and sent it. 
-
+-djouhoud : learn about the implementation 
 **Decisions / Results:**
 -Poster sent at time and reviewed by the professor 
 
