@@ -37,10 +37,14 @@ hiérarchique. Coût nul (BERT calcule déjà toutes ses couches). Exposé comme
 
 ## Fichiers
 
-- `model.py` — `JointQueryBlock`, `QFormerHead`, `FusionQFormer`, `AsymmetricLoss`
-- `dataset.py` — `FusionDataset`, `fusion_collate`, tokenizer CXR-BERT, transforms ViT
+- `model.py` — `JointQueryBlock`, `QFormerHead`, `FusionQFormer`, `build_cxr_tokenizer`
+  (encodeurs CXR-BERT + ViT chargés ici)
 - `train.py` — entraînement PyTorch Lightning + évaluation test (AUC par label)
-- `../job_multimodal.sh` / `job_qformer.sh` — soumission SLURM
+- `job_qformer.sh` — soumission SLURM
+
+Données, loss (ASL) et transforms image sont partagés via `../common/`
+(`common.data`, `common.losses`, `common.transforms`) avec les autres
+architectures multimodales.
 
 ## Entraînement
 

@@ -29,7 +29,7 @@ import sys
 
 import torch
 import torch.nn as nn
-from transformers import AutoModel, ViTModel
+from transformers import AutoModel, AutoTokenizer, ViTModel
 
 # Réutilisation de text_classification (convention sys.path du repo) : on injecte
 # le paquet avant l'import, car model.py peut être importé avant dataset.py.
@@ -42,6 +42,20 @@ if _TEXT_ROOT not in sys.path:
 from models.cxr_bert_classifier import CXR_BERT_NAME  # noqa: E402
 
 VIT_NAME = "codewithdark/vit-chest-xray"
+
+
+def build_cxr_tokenizer(max_len: int = 256):
+    """(backend_tokenizer, pad_id) de CXR-BERT, tronqué à max_len.
+
+    Le tokenizer est apparié à l'encodeur texte CXR-BERT : il vit donc avec le
+    modèle (cf. cxr_bert.py). On expose le backend `tokenizers.Tokenizer`
+    (interface `encode_batch`) attendu par common.data.FusionDataset.
+    """
+    hf_tok = AutoTokenizer.from_pretrained(CXR_BERT_NAME, trust_remote_code=True)
+    pad_id = hf_tok.pad_token_id
+    tok = hf_tok.backend_tokenizer
+    tok.enable_truncation(max_length=max_len)
+    return tok, pad_id
 
 
 class JointQueryBlock(nn.Module):
@@ -217,30 +231,3 @@ class FusionQFormer(nn.Module):
         if return_attn:
             return logits, aux
         return logits
-
-
-class AsymmetricLoss(nn.Module):
-    """Asymmetric Loss — Ben-Baruch et al. (2021), arXiv:2009.14119.
-
-    Repris verbatim d'architecture_1/train.py (le projet utilise l'ASL à la place
-    de la BCE pour le déséquilibre multi-label sévère d'Open-i).
-    """
-
-    def __init__(self, gamma_neg=4, gamma_pos=1, clip=0.05, eps=1e-8):
-        super().__init__()
-        self.gamma_neg = gamma_neg
-        self.gamma_pos = gamma_pos
-        self.clip      = clip
-        self.eps       = eps
-
-    def forward(self, logits, targets):
-        p     = torch.sigmoid(logits)
-        p_neg = (p - self.clip).clamp(min=0)
-
-        log_p   = torch.log(p.clamp(min=self.eps))
-        log_1_p = torch.log((1 - p_neg).clamp(min=self.eps))
-
-        loss_pos = (1 - p)  ** self.gamma_pos * log_p
-        loss_neg =  p_neg   ** self.gamma_neg  * log_1_p
-
-        return -(targets * loss_pos + (1 - targets) * loss_neg).mean()

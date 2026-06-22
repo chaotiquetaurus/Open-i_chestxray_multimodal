@@ -17,19 +17,19 @@ import numpy as np
 import torch
 import pytorch_lightning as pl
 from torch.utils.data import DataLoader, Subset
-from sklearn.metrics import (f1_score, roc_auc_score,
-                             classification_report, hamming_loss)
+from sklearn.metrics import f1_score, roc_auc_score, hamming_loss
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
+MM_ROOT = os.path.dirname(ROOT)                # src/mmmia/multimodal_fusion
 REPO_ROOT = os.path.abspath(os.path.join(ROOT, "..", "..", "..", ".."))
-sys.path.insert(0, ROOT)  # model.py, dataset.py (locaux)
+sys.path.insert(0, ROOT)      # model.py (local)
+sys.path.insert(0, MM_ROOT)   # common/ (partagé)
 
-from model import FusionQFormer, AsymmetricLoss                  # noqa: E402
-from dataset import (FusionDataset, fusion_collate, load_paired_df,   # noqa: E402
-                     resolve_label_cols, build_cxr_tokenizer, build_groups,
-                     TRAIN_TF, VAL_TF)
-# split groupé sans fuite (text_classification, via sys.path de dataset.py)
-from data.splits import grouped_train_val_test                   # noqa: E402
+from model import FusionQFormer, build_cxr_tokenizer            # noqa: E402
+from common.data import (FusionDataset, fusion_collate, load_paired_df,  # noqa: E402
+                         resolve_label_cols, build_groups, grouped_train_val_test)
+from common.transforms import TRAIN_TF, VAL_TF                   # noqa: E402
+from common.losses import AsymmetricLoss                        # noqa: E402
 
 DEFAULT_CSV = os.path.join(REPO_ROOT, "data", "shared", "dataset_labeled_major.csv")
 CKPT_DIR = os.path.join(ROOT, "checkpoints")

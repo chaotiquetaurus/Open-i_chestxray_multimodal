@@ -19,81 +19,51 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
-from torchvision import transforms
 from transformers import ViTModel
 from tokenizers import Tokenizer
-from iterstrat.ml_stratifiers import MultilabelStratifiedShuffleSplit
 from sklearn.metrics import roc_auc_score
 
 # ── Chemins vers les modules existants ──────────────────────────────────────
 # Convention du repo (cf. text_classification/scripts) : on insère le dossier du
 # module courant + celui de text_classification dans sys.path, puis import bare.
 ROOT = os.path.dirname(os.path.abspath(__file__))
-TEXT_ROOT = os.path.join(ROOT, "..", "text_classification")
-sys.path.insert(0, ROOT)        # model.py, dataset.py (locaux)
+MM_ROOT = os.path.dirname(ROOT)                          # multimodal_fusion (common/)
+TEXT_ROOT = os.path.join(ROOT, "..", "..", "text_classification")
+sys.path.insert(0, ROOT)        # model.py (local)
+sys.path.insert(0, MM_ROOT)     # common/ (partagé)
 sys.path.insert(0, TEXT_ROOT)   # models/ (BERTForMLM)
 
 from models import BERTForMLM    # noqa: E402  (import après sys.path)
-from model   import MultimodalFusion
-from dataset import MultimodalDataset, multimodal_collate, LABEL_COLS, load_paired_df
-
-
-# ── AsymmetricLoss (même que cv_model_vit_04) ────────────────────────────────
-
-class AsymmetricLoss(nn.Module):
-    """Asymmetric Loss — Ben-Baruch et al. (2021), arXiv:2009.14119."""
-
-    def __init__(self, gamma_neg=4, gamma_pos=1, clip=0.05, eps=1e-8):
-        super().__init__()
-        self.gamma_neg = gamma_neg
-        self.gamma_pos = gamma_pos
-        self.clip      = clip
-        self.eps       = eps
-
-    def forward(self, logits, targets):
-        p     = torch.sigmoid(logits)
-        p_neg = (p - self.clip).clamp(min=0)
-
-        log_p   = torch.log(p.clamp(min=self.eps))
-        log_1_p = torch.log((1 - p_neg).clamp(min=self.eps))
-
-        loss_pos = (1 - p)  ** self.gamma_pos * log_p
-        loss_neg =  p_neg   ** self.gamma_neg  * log_1_p
-
-        return -(targets * loss_pos + (1 - targets) * loss_neg).mean()
-
-
-# ── Transforms (identiques à cv_model_vit_04) ────────────────────────────────
-
-VIT_MEAN = [0.5, 0.5, 0.5]
-VIT_STD  = [0.5, 0.5, 0.5]
-
-TRAIN_TF = transforms.Compose([
-    transforms.Resize((224, 224)),
-    transforms.RandomHorizontalFlip(),
-    transforms.RandomRotation(15),
-    transforms.RandomAffine(degrees=0, translate=(0.10, 0.10), scale=(0.85, 1.15), shear=10),
-    transforms.ElasticTransform(alpha=40.0, sigma=5.0),
-    transforms.ColorJitter(brightness=0.3, contrast=0.3, saturation=0.1),
-    transforms.ToTensor(),
-    transforms.Normalize(mean=VIT_MEAN, std=VIT_STD),
-    transforms.RandomErasing(p=0.3, scale=(0.02, 0.12), ratio=(0.3, 3.3), value=0),
-])
-
-VAL_TF = transforms.Compose([
-    transforms.Resize((224, 224)),
-    transforms.ToTensor(),
-    transforms.Normalize(mean=VIT_MEAN, std=VIT_STD),
-])
+from model import MultimodalFusion
+from common.data import (FusionDataset, fusion_collate, load_paired_df,  # noqa: E402
+                         resolve_label_cols, build_groups, grouped_train_val_test)
+from common.transforms import TRAIN_TF, VAL_TF           # noqa: E402
+from common.losses import AsymmetricLoss                 # noqa: E402
 
 
 # ── Boucle d'entraînement ────────────────────────────────────────────────────
 
-def train_epoch(model, loader, optimizer, criterion, device):
+def _apply_modality(ids, pixels, modality):
+    """Ablation de modalité : neutralise l'entrée non utilisée.
+
+    - 'image' : texte effacé (ids → PAD=0) → mesure la perf SANS le rapport,
+                i.e. ce que vaut vraiment la branche image (baseline anti-leak).
+    - 'text'  : image effacée (pixels → 0) → perf texte seul.
+    - 'fusion': aucune modification (défaut).
+    """
+    if modality == "image":
+        ids = torch.zeros_like(ids)
+    elif modality == "text":
+        pixels = torch.zeros_like(pixels)
+    return ids, pixels
+
+
+def train_epoch(model, loader, optimizer, criterion, device, modality="fusion"):
     model.train()
     total = 0.0
     for ids, pixels, labels in loader:
         ids, pixels, labels = ids.to(device), pixels.to(device), labels.to(device)
+        ids, pixels = _apply_modality(ids, pixels, modality)
         loss = criterion(model(ids, pixels), labels)
         optimizer.zero_grad()
         loss.backward()
@@ -104,11 +74,12 @@ def train_epoch(model, loader, optimizer, criterion, device):
 
 
 @torch.no_grad()
-def evaluate(model, loader, criterion, device):
+def evaluate(model, loader, criterion, device, modality="fusion"):
     model.eval()
     total, all_probs, all_labels = 0.0, [], []
     for ids, pixels, labels in loader:
         ids, pixels, labels = ids.to(device), pixels.to(device), labels.to(device)
+        ids, pixels = _apply_modality(ids, pixels, modality)
         logits = model(ids, pixels)
         total += criterion(logits, labels).item()
         all_probs.append(logits.sigmoid().cpu().numpy())
@@ -127,7 +98,7 @@ def main(args):
     random.seed(42); np.random.seed(42); torch.manual_seed(42)
 
     DEVICE     = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    N_LABELS   = len(LABEL_COLS)
+    MODE       = 21              # arch_1 : jeu de labels complet IU-XRay (ordre canonique)
     D_MODEL    = 512
     N_HEADS    = 8
     DROPOUT    = 0.1
@@ -150,31 +121,32 @@ def main(args):
 
     # ── Données ──────────────────────────────────────────────────────────
     df = load_paired_df(args.csv)
-    print(f"Dataset total : {len(df)} images")
+    label_cols = resolve_label_cols(df, MODE)   # ordre canonique (source : text_classification)
+    N_LABELS = len(label_cols)
+    print(f"Dataset total : {len(df)} images | {N_LABELS} labels")
 
-    # Split stratifié multi-label (70 / 15 / 15)
-    msss = MultilabelStratifiedShuffleSplit(n_splits=1, test_size=0.30, random_state=42)
-    train_idx, temp_idx = next(msss.split(df, df[LABEL_COLS]))
-    msss2 = MultilabelStratifiedShuffleSplit(n_splits=1, test_size=0.50, random_state=42)
-    val_idx, test_idx = next(msss2.split(df.iloc[temp_idx], df.iloc[temp_idx][LABEL_COLS]))
+    # Split GROUPÉ par texte indication+findings (70 / 15 / 15) — aucune image
+    # d'un même rapport, ni template dupliqué, partagé entre train/val/test.
+    groups = build_groups(df)
+    train_idx, val_idx, test_idx = grouped_train_val_test(groups, train=0.70, val=0.15)
 
     train_df = df.iloc[train_idx].reset_index(drop=True)
-    val_df   = df.iloc[temp_idx].iloc[val_idx].reset_index(drop=True)
-    test_df  = df.iloc[temp_idx].iloc[test_idx].reset_index(drop=True)
-    print(f"Train: {len(train_df)}  Val: {len(val_df)}  Test: {len(test_df)}")
+    val_df   = df.iloc[val_idx].reset_index(drop=True)
+    test_df  = df.iloc[test_idx].reset_index(drop=True)
+    print(f"Train: {len(train_df)}  Val: {len(val_df)}  Test: {len(test_df)}  (split groupé, modalité={args.modality})")
 
     tok = Tokenizer.from_file(os.path.join(TEXT_CKPT, "tokenizer.json"))
 
-    train_ds = MultimodalDataset(train_df, LABEL_COLS, tok, args.image_dir, TRAIN_TF)
-    val_ds   = MultimodalDataset(val_df,   LABEL_COLS, tok, args.image_dir, VAL_TF)
-    test_ds  = MultimodalDataset(test_df,  LABEL_COLS, tok, args.image_dir, VAL_TF)
+    train_ds = FusionDataset(train_df, label_cols, tok, args.image_dir, TRAIN_TF)
+    val_ds   = FusionDataset(val_df,   label_cols, tok, args.image_dir, VAL_TF)
+    test_ds  = FusionDataset(test_df,  label_cols, tok, args.image_dir, VAL_TF)
 
     train_loader = DataLoader(train_ds, BATCH, shuffle=True,
-                              collate_fn=multimodal_collate, num_workers=NUM_WORKERS, pin_memory=True)
+                              collate_fn=fusion_collate, num_workers=NUM_WORKERS, pin_memory=True)
     val_loader   = DataLoader(val_ds,   BATCH, shuffle=False,
-                              collate_fn=multimodal_collate, num_workers=NUM_WORKERS, pin_memory=True)
+                              collate_fn=fusion_collate, num_workers=NUM_WORKERS, pin_memory=True)
     test_loader  = DataLoader(test_ds,  BATCH, shuffle=False,
-                              collate_fn=multimodal_collate, num_workers=NUM_WORKERS, pin_memory=True)
+                              collate_fn=fusion_collate, num_workers=NUM_WORKERS, pin_memory=True)
 
     # ── Modèles pré-entraînés ─────────────────────────────────────────────
     bert = BERTForMLM(tok.get_vocab_size(), 256, 8, 6, 512)
@@ -259,8 +231,8 @@ def main(args):
             # Étendre les base_lrs du cosine scheduler pour inclure le backbone
             cosine_sched.base_lrs.append(LR_BACK)
 
-        train_loss         = train_epoch(model, train_loader, optimizer, criterion, DEVICE)
-        val_loss, val_auc  = evaluate(model, val_loader, criterion, DEVICE)
+        train_loss         = train_epoch(model, train_loader, optimizer, criterion, DEVICE, args.modality)
+        val_loss, val_auc  = evaluate(model, val_loader, criterion, DEVICE, args.modality)
         current_lr         = scheduler.get_last_lr()[0]
         scheduler.step()
 
@@ -286,7 +258,7 @@ def main(args):
     # ── Évaluation finale ─────────────────────────────────────────────────
     print("\n=== Évaluation sur le test set ===")
     model.load_state_dict(torch.load(CKPT_PATH, map_location=DEVICE, weights_only=True))
-    test_loss, test_auc = evaluate(model, test_loader, criterion, DEVICE)
+    test_loss, test_auc = evaluate(model, test_loader, criterion, DEVICE, args.modality)
     print(f"Test Loss : {test_loss:.4f}  |  Test Mean AUC : {test_auc:.4f}")
     print(f"\nMeilleur val AUC : {best_auc:.4f}")
     print(f"Checkpoint : {CKPT_PATH}")
@@ -317,6 +289,12 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--batch_size", type=int, default=16,
+    )
+    parser.add_argument(
+        "--modality", choices=["fusion", "image", "text"], default="fusion",
+        help="Ablation : 'fusion' (défaut) ; 'image' efface le texte (baseline "
+             "anti-leak) ; 'text' efface l'image. Comparer fusion vs image "
+             "chiffre le leak apporté par le rapport.",
     )
     args = parser.parse_args()
     main(args)
