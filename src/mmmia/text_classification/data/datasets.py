@@ -4,6 +4,7 @@ import os, random, torch, torch.nn.functional as F
 import pandas as pd
 from torch.utils.data import Dataset
 from .tokenizer import SP
+from .splits import text_group_key
 
 # ── Label definitions (shared across all scripts) ────────────────────
 
@@ -21,22 +22,30 @@ LABELS_14 = [
 MODE_NAMES = {5: "CheXpert-5", 14: "NIH-14", 21: "IU-XRay-21"}
 
 
-def load_reports(mode=21, text_cols="findings", data_dir=None, pw_clip=5):
+def load_reports(mode=21, text_cols=("indication", "findings"), data_dir=None,
+                 pw_clip=5, csv_name="dataset_reports.csv", return_groups=False):
     """Load IU X-Ray reports and compute pos_weight.
 
     Args:
         mode: 5, 14, or 21 labels.
         text_cols: column name (str) or list of column names to concatenate.
+                   Défaut = indication + findings (l'indication est l'info
+                   clinique disponible en vrai au moment du compte rendu).
         data_dir: path to data directory (default: same dir as this file).
         pw_clip: max value for pos_weight clamping.
+        csv_name: fichier CSV à charger. "dataset_reports.csv" = labels
+                  major+automatic (défaut) ; "dataset_reports_major.csv" =
+                  ablation labels humains seuls (mêmes 21 catégories).
+        return_groups: si True, renvoie aussi `groups` (hash du findings
+                  normalisé) pour un split groupé SANS fuite (cf. splits.py).
 
     Returns:
-        texts, labels_np, label_cols, pos_weight, mode_name
+        texts, labels_np, label_cols, pos_weight, mode_name [, groups]
     """
     if data_dir is None:
         data_dir = os.path.dirname(os.path.abspath(__file__))
 
-    df = pd.read_csv(os.path.join(data_dir, "dataset_reports.csv"))
+    df = pd.read_csv(os.path.join(data_dir, csv_name))
 
     if mode == 5:    label_cols = [c for c in LABELS_5  if c in df.columns]
     elif mode == 14: label_cols = [c for c in LABELS_14 if c in df.columns]
@@ -44,8 +53,11 @@ def load_reports(mode=21, text_cols="findings", data_dir=None, pw_clip=5):
 
     if isinstance(text_cols, str):
         text_cols = [text_cols]
+    text_cols = list(text_cols)
 
-    df = df.dropna(subset=text_cols)
+    # On exige `findings` (texte central) ; les autres colonnes sont optionnelles.
+    drop_subset = ["findings"] if "findings" in text_cols else text_cols
+    df = df.dropna(subset=drop_subset).reset_index(drop=True)
     texts = df[text_cols].fillna("").agg(" ".join, axis=1).str.strip().tolist()
     labels_np = df[label_cols].apply(pd.to_numeric, errors="coerce").fillna(0).values
 
@@ -53,7 +65,11 @@ def load_reports(mode=21, text_cols="findings", data_dir=None, pw_clip=5):
     pos = y_all.sum(0); neg = len(y_all) - pos
     pos_weight = (neg / pos.clamp(min=1)).clamp(max=pw_clip)
 
-    return texts, labels_np, label_cols, pos_weight, MODE_NAMES[mode]
+    out = [texts, labels_np, label_cols, pos_weight, MODE_NAMES[mode]]
+    if return_groups:
+        # Groupe = texte findings normalisé → aucun texte partagé entre splits.
+        out.append(text_group_key(df["findings"].fillna("")))
+    return tuple(out)
 
 
 class MLMDataset(Dataset):
