@@ -539,3 +539,15 @@ Aziz: Continue working on the poster
 **Next Steps for the Following Session:**
 -Aziz: Prepare a presentation for the next meeting with the professor
 -Enzo: Prepare a presentation for the next meeting with the professor
+
+### Session 11 [22/06/26]
+
+**Activities Completed before session:** 
+
+**Session Objectives:**
+
+**Activities Completed:**
+
+**Decisions / Results:**
+
+**Next Steps for the Following Session:**
