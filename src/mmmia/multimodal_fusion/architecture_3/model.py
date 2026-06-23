@@ -61,10 +61,17 @@ def build_cxr_tokenizer(max_len: int = 256):
 class JointQueryBlock(nn.Module):
     """Un bloc Q-Former : SA([Q;T]) → CA(Q→Z) → FFN, chacune résiduelle + LN."""
 
-    def __init__(self, d=768, n_heads=12, d_ff=3072, dropout=0.1, norm="post"):
+    def __init__(self, d=768, n_heads=12, d_ff=3072, dropout=0.1, norm="post",
+                 center_query_ca=False):
         super().__init__()
         assert norm in ("post", "pre")
         self.norm = norm
+        # Centrage de la requête (q_j - q̄) AVANT la cross-attention : retire la
+        # composante commune aux 14 labels du calcul des poids → l'attention de j
+        # est pilotée par son résidu r_j (cartes distinctes par pathologie). On ne
+        # retire QUE la moyenne (commun aux 14), pas une direction SVD qui pourrait
+        # porter une co-occurrence légitime (ex. œdème/cardiomégalie).
+        self.center_query_ca = center_query_ca
         self.self_attn = nn.MultiheadAttention(d, n_heads, dropout=dropout, batch_first=True)
         self.cross_attn = nn.MultiheadAttention(d, n_heads, dropout=dropout, batch_first=True)
         self.ffn = nn.Sequential(nn.Linear(d, d_ff), nn.GELU(), nn.Linear(d_ff, d))
@@ -90,7 +97,8 @@ class JointQueryBlock(nn.Module):
                                      need_weights=return_attn)
             q = q + h
             qn = self.ln2(q)
-            h, ca_w = self.cross_attn(qn, Z, Z, need_weights=return_attn)
+            qca = qn - qn.mean(1, keepdim=True) if self.center_query_ca else qn
+            h, ca_w = self.cross_attn(qca, Z, Z, need_weights=return_attn)
             q = q + h
             q = q + self.ffn(self.ln3(q))
         else:
@@ -99,7 +107,8 @@ class JointQueryBlock(nn.Module):
             h, sa_w = self.self_attn(q, ctx_t, ctx_t, key_padding_mask=kpm,
                                      need_weights=return_attn)
             q = self.ln1(q + h)
-            h, ca_w = self.cross_attn(q, Z, Z, need_weights=return_attn)
+            qca = q - q.mean(1, keepdim=True) if self.center_query_ca else q
+            h, ca_w = self.cross_attn(qca, Z, Z, need_weights=return_attn)
             q = self.ln2(q + h)
             q = self.ln3(q + self.ffn(q))
 
@@ -111,13 +120,14 @@ class QFormerHead(nn.Module):
 
     def __init__(self, n_query=14, d=768, n_layers=3, n_labels=14,
                  n_heads=12, d_ff=3072, dropout=0.1, norm="post",
-                 reinject_identity=False):
+                 reinject_identity=False, center_query_ca=False):
         super().__init__()
         assert n_query == n_labels, "label-aligné : une query par pathologie"
         self.norm = norm
         self.queries = nn.Parameter(torch.randn(1, n_query, d) * 0.02)
         self.blocks = nn.ModuleList(
-            [JointQueryBlock(d, n_heads, d_ff, dropout, norm=norm) for _ in range(n_layers)]
+            [JointQueryBlock(d, n_heads, d_ff, dropout, norm=norm,
+                             center_query_ca=center_query_ca) for _ in range(n_layers)]
         )
         # Ré-injection identité : signature label ré-ajoutée sur le résidu AVANT
         # chaque bloc → l'identité de la requête j ne décroît pas en profondeur.
@@ -176,6 +186,7 @@ class FusionQFormer(nn.Module):
         text_feature_mode="last",       # "last" | "deep"
         norm="post",                    # "post" (historique) | "pre" (anti-collapse)
         reinject_identity=False,        # ré-injecter E_label avant chaque bloc
+        center_query_ca=False,          # centrer q (q - q̄) avant la cross-attention
         text_dropout=0.0,               # masquage de modalité texte (proba/échantillon)
         freeze_text=True,
         freeze_image=True,
@@ -220,6 +231,7 @@ class FusionQFormer(nn.Module):
             n_query=n_labels, d=d, n_layers=n_layers, n_labels=n_labels,
             n_heads=n_heads, d_ff=d_ff, dropout=dropout,
             norm=norm, reinject_identity=reinject_identity,
+            center_query_ca=center_query_ca,
         )
 
         if freeze_text:
