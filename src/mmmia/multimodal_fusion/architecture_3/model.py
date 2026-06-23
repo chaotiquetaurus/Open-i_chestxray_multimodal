@@ -162,7 +162,10 @@ class FusionQFormer(nn.Module):
 
         # ── Encodeurs ────────────────────────────────────────────────────
         self.text_encoder = AutoModel.from_pretrained(text_name, trust_remote_code=True)
-        self.image_encoder = ViTModel.from_pretrained(image_name)
+        # add_pooling_layer=False : on n'utilise que last_hidden_state (197 tokens),
+        # jamais pooler_output ; évite d'initialiser un pooler aléatoire inutilisé
+        # (le checkpoint codewithdark/vit-chest-xray n'en a pas, c'est un ViTForImageClassification).
+        self.image_encoder = ViTModel.from_pretrained(image_name, add_pooling_layer=False)
 
         d_text = self.text_encoder.config.hidden_size
         d_image = self.image_encoder.config.hidden_size

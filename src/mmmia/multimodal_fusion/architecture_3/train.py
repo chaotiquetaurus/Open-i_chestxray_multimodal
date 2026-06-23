@@ -88,9 +88,12 @@ class LitFusionQFormer(pl.LightningModule):
         self.val_labels.append(lab.cpu())
 
     def on_validation_epoch_end(self):
+        vl = float("nan")
         if self._val_losses:
-            self.history["val"].append(torch.stack(self._val_losses).mean().item())
+            vl = torch.stack(self._val_losses).mean().item()
+            self.history["val"].append(vl)
             self._val_losses.clear()
+        auc = float("nan")
         if self.val_probs:
             probs = torch.cat(self.val_probs).numpy()
             labs = torch.cat(self.val_labels).numpy()
@@ -100,6 +103,11 @@ class LitFusionQFormer(pl.LightningModule):
                 self.log("val_auc", auc, prog_bar=True)
         self.val_probs.clear()
         self.val_labels.clear()
+        # Ligne lisible dans le .out batch (la barre de progression Lightning,
+        # écrite en \r sur TTY, ne s'affiche pas dans un fichier redirigé).
+        tl = self.history["train"][-1] if self.history["train"] else float("nan")
+        print(f"  Epoch {self.current_epoch + 1:2d} | train_loss={tl:.4f} | "
+              f"val_loss={vl:.4f} | val_auc={auc:.4f}", flush=True)
 
     def configure_optimizers(self):
         opt = torch.optim.AdamW(self.parameters(), lr=self.hparams.lr, weight_decay=0.01)
@@ -156,6 +164,7 @@ def main(args):
         callbacks=[ckpt_cb, early_cb],
         num_sanity_val_steps=0,
         logger=False,
+        enable_progress_bar=False,   # batch SLURM : la barre \r pollue le .out
         overfit_batches=args.overfit_batches,
     )
     trainer.fit(lit, train_loader, val_loader)
