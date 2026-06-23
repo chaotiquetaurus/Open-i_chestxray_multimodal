@@ -74,6 +74,10 @@ def load_model(ckpt_path, device):
     # state_dict Lightning : clés préfixées `model.` (LitFusionQFormer.model).
     sd = {k[len("model."):]: v for k, v in ckpt["state_dict"].items()
           if k.startswith("model.")}
+    # Les checkpoints entraînés avant add_pooling_layer=False portent un pooler
+    # ViT (image_encoder.pooler.*) jamais utilisé (on ne lit que last_hidden_state).
+    # On le retire pour matcher le modèle actuel sans relâcher strict=True.
+    sd = {k: v for k, v in sd.items() if not k.startswith("image_encoder.pooler.")}
     model.load_state_dict(sd)
     model.eval()
     return model, hp
