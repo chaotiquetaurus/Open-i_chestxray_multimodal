@@ -53,6 +53,35 @@ def mean_offdiag(S):
     return ((S.sum() - S.diagonal().sum()) / (n * (n - 1))).item()
 
 
+def effective_rank(q):
+    """Participation ratio des valeurs singulières de q (B, n, d) ∈ [1, n],
+    moyenné sur le batch. ≈1 = toutes les requêtes sur une direction (collapse) ;
+    ≈n = n directions indépendantes (pleinement distinctes)."""
+    s = torch.linalg.svdvals(q)                            # (B, min(n,d))
+    s2 = s ** 2
+    pr = s2.sum(-1) ** 2 / (s2 ** 2).sum(-1).clamp(min=1e-12)
+    return pr.mean().item()
+
+
+def decompose(q):
+    """q_j = q̄ + r_j (composante partagée + résidu par-label). Retourne, moyenné
+    sur le batch : fraction d'énergie partagée ‖q̄‖²/⟨‖q_j‖²⟩, cosinus hors-diag
+    des RÉSIDUS (le vrai collapse d'identité), rang effectif des résidus."""
+    qbar = q.mean(1, keepdim=True)                         # (B,1,d) composante commune
+    r = q - qbar                                           # (B,n,d) résidus par-label
+    e_q = (q ** 2).sum(-1).mean(1)                         # (B,) ⟨‖q_j‖²⟩
+    e_shared = (qbar.squeeze(1) ** 2).sum(-1)             # (B,) ‖q̄‖²
+    shared_frac = (e_shared / e_q.clamp(min=1e-8)).mean().item()
+    return shared_frac, mean_offdiag(cos_matrix(r)), effective_rank(r)
+
+
+def text_align(q, t_pooled):
+    """cos(q̄, texte poolé) moyenné : la composante commune EST-elle le texte ?"""
+    if q.size(0) != t_pooled.size(0):
+        return float("nan")                               # init (B=1) : non comparable
+    return F.cosine_similarity(q.mean(1), t_pooled, dim=-1).mean().item()
+
+
 def main(args):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model, hp = load_model(args.ckpt, device)
@@ -87,15 +116,30 @@ def main(args):
     # État initial : le paramètre `queries` (1, n, d), commun à tous les échantillons.
     q_init = model.qformer.queries.detach()                        # (1, n, d)
 
-    # Matrices de similarité : init, puis après chaque bloc.
-    mats = [cos_matrix(q_init)] + [cos_matrix(q) for q in captured]
-    names = ["init"] + [f"bloc {i}" for i in range(len(captured))]
+    # Texte poolé (moyenne des tokens non-pad) pour tester l'alignement q̄↔texte.
+    with torch.no_grad():
+        tmask = (ids != model.pad_id).long()
+        T = model.text_encoder(input_ids=ids, attention_mask=tmask).last_hidden_state
+        w = tmask.unsqueeze(-1).float()
+        t_pooled = (T * w).sum(1) / w.sum(1).clamp(min=1e-8)        # (B, d)
 
-    print("\n--  cosinus hors-diagonale moyen des 14 requêtes  --")
-    print("  (≈0 = orthogonales/distinctes ;  →1 = collapse)")
-    for name, S in zip(names, mats):
-        m = mean_offdiag(S)
-        print(f"  {name:8s} : {m:+.3f}   {'#' * int(max(m, 0) * 40)}")
+    all_q = [q_init] + captured
+    names = ["init"] + [f"bloc {i}" for i in range(len(captured))]
+    mats = [cos_matrix(q) for q in all_q]
+
+    # Le cosinus BRUT confond « composante texte commune » (voulu) et « perte
+    # d'identité par-label » (à éviter). On centre pour les séparer.
+    print("\n--  diagnostic de collapse des 14 requêtes (moyenné sur le batch)  --")
+    print("  cos brut : confond commun+résidu | cos résid : VRAI collapse d'identité")
+    print("  rang eff ∈ [1,14] (→14 = distinctes) | %part. : énergie composante commune")
+    print(f"  {'prof.':8s} {'cos brut':>9s} {'%part.':>7s} {'cos résid':>10s} "
+          f"{'rang eff':>9s} {'cos(q̄,txt)':>11s}")
+    for name, q in zip(names, all_q):
+        raw = mean_offdiag(cos_matrix(q))
+        sf, rc, er = decompose(q)
+        ta = text_align(q, t_pooled)
+        print(f"  {name:8s} {raw:+9.3f} {sf * 100:6.1f}% {rc:+10.3f} "
+              f"{er:9.2f} {ta:+11.3f}")
 
     out_dir = args.out_dir or os.path.join(ROOT, "results", f"collapse_{mode_tag}")
     os.makedirs(out_dir, exist_ok=True)
@@ -115,14 +159,26 @@ def main(args):
     p1 = os.path.join(out_dir, f"cosine_matrix_{mode_tag}.png")
     fig.savefig(p1, dpi=150, bbox_inches="tight"); plt.close(fig)
 
-    # (2) Courbe : collapse en fonction de la profondeur.
-    fig, ax = plt.subplots(figsize=(7, 4.5))
-    ax.plot(range(len(mats)), [mean_offdiag(S) for S in mats],
-            "o-", color="#007A8A", linewidth=2)
+    # (2) Courbe-clé : cos BRUT vs cos RÉSIDUEL (+ rang effectif) par profondeur.
+    raw_curve = [mean_offdiag(S) for S in mats]
+    decs = [decompose(q) for q in all_q]
+    res_curve = [d[1] for d in decs]
+    er_curve = [d[2] for d in decs]
+
+    fig, ax = plt.subplots(figsize=(7.5, 4.5))
+    ax.plot(range(len(names)), raw_curve, "o-", color="#bbbbbb", linewidth=2,
+            label="cos BRUT (confond commun+résidu)")
+    ax.plot(range(len(names)), res_curve, "o-", color="#C0392B", linewidth=2.5,
+            label="cos RÉSIDUEL (vrai collapse d'identité)")
     ax.set_xticks(range(len(names))); ax.set_xticklabels(names)
-    ax.set_ylabel("cosinus hors-diagonale moyen")
-    ax.set_title(f"Homogénéisation des requêtes par profondeur — {mode_tag}")
-    ax.grid(alpha=0.3)
+    ax.set_ylabel("cosinus hors-diagonale moyen"); ax.set_ylim(-0.1, 1.05)
+    ax.grid(alpha=0.3); ax.legend(loc="center left", fontsize=9)
+    ax2 = ax.twinx()
+    ax2.plot(range(len(names)), er_curve, "s--", color="#2471A3", linewidth=1.8,
+             label="rang effectif (→14 = distinctes)")
+    ax2.set_ylabel("rang effectif des requêtes"); ax2.set_ylim(0, len(label_cols) + 0.5)
+    ax2.legend(loc="center right", fontsize=9)
+    ax.set_title(f"Collapse des requêtes par profondeur — {mode_tag}")
     fig.tight_layout()
     p2 = os.path.join(out_dir, f"collapse_curve_{mode_tag}.png")
     fig.savefig(p2, dpi=150, bbox_inches="tight"); plt.close(fig)
