@@ -61,8 +61,10 @@ def build_cxr_tokenizer(max_len: int = 256):
 class JointQueryBlock(nn.Module):
     """Un bloc Q-Former : SA([Q;T]) → CA(Q→Z) → FFN, chacune résiduelle + LN."""
 
-    def __init__(self, d=768, n_heads=12, d_ff=3072, dropout=0.1):
+    def __init__(self, d=768, n_heads=12, d_ff=3072, dropout=0.1, norm="post"):
         super().__init__()
+        assert norm in ("post", "pre")
+        self.norm = norm
         self.self_attn = nn.MultiheadAttention(d, n_heads, dropout=dropout, batch_first=True)
         self.cross_attn = nn.MultiheadAttention(d, n_heads, dropout=dropout, batch_first=True)
         self.ffn = nn.Sequential(nn.Linear(d, d_ff), nn.GELU(), nn.Linear(d_ff, d))
@@ -71,27 +73,35 @@ class JointQueryBlock(nn.Module):
     def forward(self, q, T, Z, txt_pad=None, return_attn=False):
         B, n = q.size(0), q.size(1)
 
-        # (1) SA des queries sur [Q; T] (asymétrie : seules les queries sont mises à jour)
-        ctx_t = torch.cat([q, T], dim=1)                                  # (B, n+L, d)
+        # key_padding_mask pour la SA sur [Q; T] : True = ignoré (inverse HuggingFace).
+        # Les n positions queries sont toujours visibles → zeros (False).
         kpm = None
         if txt_pad is not None:
-            # MultiheadAttention : key_padding_mask True = position ignorée
-            # (inverse de la convention HuggingFace) ; les n positions queries
-            # sont toujours visibles → zeros (False).
             kpm = torch.cat(
                 [torch.zeros(B, n, dtype=torch.bool, device=q.device), txt_pad], dim=1
             )
-        h, sa_w = self.self_attn(
-            q, ctx_t, ctx_t, key_padding_mask=kpm, need_weights=return_attn
-        )
-        q = self.ln1(q + h)
 
-        # (2) CA des queries vers l'image
-        h, ca_w = self.cross_attn(q, Z, Z, need_weights=return_attn)
-        q = self.ln2(q + h)
-
-        # (3) FFN
-        q = self.ln3(q + self.ffn(q))
+        if self.norm == "pre":
+            # Pré-norm : le résidu q traverse HORS du LN → l'identité des requêtes
+            # n'est jamais re-normalisée, elle persiste en profondeur (anti-collapse).
+            qn = self.ln1(q)
+            ctx_t = torch.cat([qn, T], dim=1)                             # (B, n+L, d)
+            h, sa_w = self.self_attn(qn, ctx_t, ctx_t, key_padding_mask=kpm,
+                                     need_weights=return_attn)
+            q = q + h
+            qn = self.ln2(q)
+            h, ca_w = self.cross_attn(qn, Z, Z, need_weights=return_attn)
+            q = q + h
+            q = q + self.ffn(self.ln3(q))
+        else:
+            # Post-norm (défaut, comportement historique : LN après le résidu).
+            ctx_t = torch.cat([q, T], dim=1)                              # (B, n+L, d)
+            h, sa_w = self.self_attn(q, ctx_t, ctx_t, key_padding_mask=kpm,
+                                     need_weights=return_attn)
+            q = self.ln1(q + h)
+            h, ca_w = self.cross_attn(q, Z, Z, need_weights=return_attn)
+            q = self.ln2(q + h)
+            q = self.ln3(q + self.ffn(q))
 
         return q, sa_w, ca_w
 
@@ -100,13 +110,23 @@ class QFormerHead(nn.Module):
     """N blocs JointQueryBlock + tête label-alignée (1 query par pathologie)."""
 
     def __init__(self, n_query=14, d=768, n_layers=3, n_labels=14,
-                 n_heads=12, d_ff=3072, dropout=0.1):
+                 n_heads=12, d_ff=3072, dropout=0.1, norm="post",
+                 reinject_identity=False):
         super().__init__()
         assert n_query == n_labels, "label-aligné : une query par pathologie"
+        self.norm = norm
         self.queries = nn.Parameter(torch.randn(1, n_query, d) * 0.02)
         self.blocks = nn.ModuleList(
-            [JointQueryBlock(d, n_heads, d_ff, dropout) for _ in range(n_layers)]
+            [JointQueryBlock(d, n_heads, d_ff, dropout, norm=norm) for _ in range(n_layers)]
         )
+        # Ré-injection identité : signature label ré-ajoutée sur le résidu AVANT
+        # chaque bloc → l'identité de la requête j ne décroît pas en profondeur.
+        # N'a de sens qu'en pré-norm (en post-norm le LN la dilue quand même).
+        self.label_emb = (nn.Parameter(torch.randn(1, n_query, d) * 0.02)
+                          if reinject_identity else None)
+        # Pré-norm : la sortie du dernier bloc n'est pas normalisée → LN final
+        # avant la tête (échelle stable). Inutile en post-norm (déjà normalisé).
+        self.final_ln = nn.LayerNorm(d) if norm == "pre" else None
         self.W = nn.Parameter(torch.randn(n_labels, d) * 0.02)   # (14, d)
         self.b = nn.Parameter(torch.zeros(n_labels))             # (14,)
 
@@ -124,10 +144,14 @@ class QFormerHead(nn.Module):
         q = self.queries.expand(B, -1, -1)                    # (B, 14, d)
         sa_all, ca_all = [], []
         for i, blk in enumerate(self.blocks):
+            if self.label_emb is not None:
+                q = q + self.label_emb        # re-tampon identité (sur le résidu)
             T_i = T[i] if is_per_layer else T
             q, sa_w, ca_w = blk(q, T_i, Z, txt_pad, return_attn)   # q : (B, 14, d)
             sa_all.append(sa_w)
             ca_all.append(ca_w)
+        if self.final_ln is not None:
+            q = self.final_ln(q)
         # lecture diagonale : logit_j = w_j · H_j + b_j   (ici q joue le rôle de H)
         logits = (q * self.W.unsqueeze(0)).sum(-1) + self.b   # (B, 14)
         return logits, {"sa": sa_all, "ca": ca_all, "queries": q}
@@ -150,6 +174,9 @@ class FusionQFormer(nn.Module):
         dropout=0.1,
         pad_id=0,
         text_feature_mode="last",       # "last" | "deep"
+        norm="post",                    # "post" (historique) | "pre" (anti-collapse)
+        reinject_identity=False,        # ré-injecter E_label avant chaque bloc
+        text_dropout=0.0,               # masquage de modalité texte (proba/échantillon)
         freeze_text=True,
         freeze_image=True,
         text_name=CXR_BERT_NAME,
@@ -157,8 +184,10 @@ class FusionQFormer(nn.Module):
     ):
         super().__init__()
         assert text_feature_mode in ("last", "deep")
+        assert norm in ("post", "pre")
         self.pad_id = pad_id
         self.text_feature_mode = text_feature_mode
+        self.text_dropout = text_dropout
 
         # ── Encodeurs ────────────────────────────────────────────────────
         self.text_encoder = AutoModel.from_pretrained(text_name, trust_remote_code=True)
@@ -190,6 +219,7 @@ class FusionQFormer(nn.Module):
         self.qformer = QFormerHead(
             n_query=n_labels, d=d, n_layers=n_layers, n_labels=n_labels,
             n_heads=n_heads, d_ff=d_ff, dropout=dropout,
+            norm=norm, reinject_identity=reinject_identity,
         )
 
         if freeze_text:
@@ -218,6 +248,14 @@ class FusionQFormer(nn.Module):
     def forward(self, ids, pixel_values, return_attn=False):
         mask = (ids != self.pad_id).long()                       # 1 = vrai token
         txt_pad = (ids == self.pad_id)                           # True = ignoré (MHA)
+
+        # Modality dropout (ModDrop, Neverova et al. 2016) : à l'entraînement, avec
+        # proba text_dropout, on masque TOUT le texte d'un échantillon → la voie
+        # image doit suffire. Casse l'unimodal bias (le modèle « lit le rapport »).
+        # Pas de NaN : chaque requête voit toujours les n requêtes dans la SA.
+        if self.training and self.text_dropout > 0:
+            drop = torch.rand(ids.size(0), device=ids.device) < self.text_dropout
+            txt_pad = txt_pad | drop.unsqueeze(1)                # (B,1) broadcast → (B,L)
 
         need_hidden = self.text_feature_mode == "deep"
         out = self.text_encoder(

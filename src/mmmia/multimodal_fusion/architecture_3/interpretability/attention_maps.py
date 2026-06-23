@@ -68,6 +68,8 @@ def load_model(ckpt_path, device):
         n_layers=hp.get("n_layers", 3),
         pad_id=hp.get("pad_id", 0),
         text_feature_mode=hp.get("text_feature_mode", "last"),
+        norm=hp.get("norm", "post"),
+        reinject_identity=hp.get("reinject_identity", False),
         freeze_text=True, freeze_image=True,
     ).to(device)
 

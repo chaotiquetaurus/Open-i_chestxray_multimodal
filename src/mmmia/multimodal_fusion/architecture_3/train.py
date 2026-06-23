@@ -42,12 +42,14 @@ os.makedirs(CKPT_DIR, exist_ok=True)
 
 class LitFusionQFormer(pl.LightningModule):
     def __init__(self, n_labels, pad_id, n_layers=3, text_feature_mode="last",
+                 norm="post", reinject_identity=False, text_dropout=0.0,
                  lr=2e-4, epochs=30, unfreeze_at=None):
         super().__init__()
         self.save_hyperparameters()
         self.model = FusionQFormer(
             n_labels=n_labels, n_layers=n_layers, pad_id=pad_id,
             text_feature_mode=text_feature_mode,
+            norm=norm, reinject_identity=reinject_identity, text_dropout=text_dropout,
             freeze_text=True, freeze_image=True,
         )
         self.loss_fn = AsymmetricLoss()
@@ -149,12 +151,23 @@ def main(args):
     # ── Modèle ────────────────────────────────────────────────────────
     lit = LitFusionQFormer(
         n_labels=len(label_cols), pad_id=pad_id, n_layers=args.n_layers,
-        text_feature_mode=args.text_feature_mode, lr=args.lr,
+        text_feature_mode=args.text_feature_mode,
+        norm=args.norm, reinject_identity=args.reinject_identity,
+        text_dropout=args.text_dropout, lr=args.lr,
         epochs=args.epochs, unfreeze_at=args.unfreeze_at,
     )
 
+    # Tag de variante → checkpoints distincts (n'écrase pas les runs post-norm).
+    tag = f"qformer_{args.mode}_{args.text_feature_mode}_{args.norm}"
+    if args.reinject_identity:
+        tag += "_reinj"
+    if args.text_dropout:
+        tag += f"_td{args.text_dropout:g}"
+    print(f"Variante : norm={args.norm} | reinject={args.reinject_identity} | "
+          f"text_dropout={args.text_dropout} → ckpt '{tag}'")
+
     ckpt_cb = pl.callbacks.ModelCheckpoint(
-        dirpath=CKPT_DIR, filename=f"qformer_{args.mode}_{args.text_feature_mode}",
+        dirpath=CKPT_DIR, filename=tag,
         monitor="val_auc", mode="max", save_top_k=1)
     early_cb = pl.callbacks.EarlyStopping("val_auc", patience=args.patience, mode="max")
 
@@ -224,6 +237,12 @@ def build_argparser():
     p.add_argument("--n_layers", type=int, default=3, help="Nombre de blocs Q-Former (2-4)")
     p.add_argument("--text_feature_mode", default="last", choices=["last", "deep"],
                    help="'last' (défaut) ou 'deep' (branchement BERT couche↔bloc)")
+    p.add_argument("--norm", default="post", choices=["post", "pre"],
+                   help="'post' (défaut, historique) ou 'pre' (anti-collapse des requêtes)")
+    p.add_argument("--reinject_identity", action="store_true",
+                   help="Ré-injecte la signature label avant chaque bloc (utile en pré-norm)")
+    p.add_argument("--text_dropout", type=float, default=0.0,
+                   help="Modality dropout texte : proba de masquer tout le texte d'un échantillon")
     p.add_argument("--unfreeze_at", type=int, default=None,
                    help="Epoch (1-indexée) où dégeler les encodeurs ; défaut : jamais")
     p.add_argument("--batch_size", type=int, default=16)

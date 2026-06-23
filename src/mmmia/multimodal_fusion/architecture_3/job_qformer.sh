@@ -31,6 +31,9 @@ set -euo pipefail
 MODE="${1:-14}"
 LABELS="${2:-major}"
 TEXT_MODE="${3:-last}"
+# Flags train.py supplémentaires (variante anti-collapse / modality dropout), ex :
+#   EXTRA_ARGS="--norm pre --reinject_identity --text_dropout 0.3"
+EXTRA_ARGS="${EXTRA_ARGS:-}"
 
 # ---- Racine = dossier de soumission (sbatch copie le script dans un spool) --
 REPO_ROOT="${SLURM_SUBMIT_DIR:-$PWD}"
@@ -84,8 +87,8 @@ python -c "import torch; print('CUDA:', torch.cuda.is_available())"
 
 # ---- Entraînement + évaluation (split groupé déjà câblé dans train.py) ------
 cd "$ARCH_PKG"
-echo "=== python train.py --csv $CSV --image_dir $IMAGE_DIR --mode $MODE --text_feature_mode $TEXT_MODE ==="
+echo "=== python train.py --csv $CSV --image_dir $IMAGE_DIR --mode $MODE --text_feature_mode $TEXT_MODE $EXTRA_ARGS ==="
 python -u train.py --csv "$CSV" --image_dir "$IMAGE_DIR" \
-       --mode "$MODE" --text_feature_mode "$TEXT_MODE" --batch_size 16
+       --mode "$MODE" --text_feature_mode "$TEXT_MODE" --batch_size 16 $EXTRA_ARGS
 
 echo "=== Terminé à $(date) — checkpoint dans $ARCH_PKG/checkpoints/ ==="
