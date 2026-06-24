@@ -69,8 +69,7 @@ def load_model(ckpt_path, device):
         pad_id=hp.get("pad_id", 0),
         text_feature_mode=hp.get("text_feature_mode", "last"),
         norm=hp.get("norm", "post"),
-        reinject_identity=hp.get("reinject_identity", False),
-        center_query_ca=hp.get("center_query_ca", False),
+        radio_only=hp.get("radio_only", False),
         freeze_text=True, freeze_image=True,
     ).to(device)
 
@@ -158,16 +157,8 @@ def main(args):
     df = load_paired_df(args.csv)
     label_cols = resolve_label_cols(df, hp.get("n_labels", 14))
     mode_tag = hp.get("text_feature_mode", "last")
-
-    # Override inférence : forcer le centrage de requête à la CA, même sur un ckpt
-    # entraîné SANS (le flag ne change que le forward, aucun poids) → teste si les
-    # résidus par-label portent une info spatiale distincte, sans réentraîner.
-    if args.center_query_ca:
-        for blk in model.qformer.blocks:
-            blk.center_query_ca = True
-        mode_tag += "_cqcINF"
-        print("  [override] center_query_ca=True à l'inférence (test sans retrain)")
-
+    if hp.get("radio_only"):
+        mode_tag += "_radio"
     print(f"Checkpoint : {args.ckpt}  (mode={mode_tag}, n_layers={hp.get('n_layers')})")
     print(f"Device     : {device} | grille patches {grid}x{grid}")
 
@@ -205,8 +196,6 @@ def build_argparser():
                    help="Si >0 : N premiers échantillons du TEST avec ≥1 label positif")
     p.add_argument("--topk", type=int, default=4, help="Nombre de labels affichés (top proba)")
     p.add_argument("--block", type=int, default=-1, help="Bloc Q-Former dont on lit la CA (-1=dernier)")
-    p.add_argument("--center_query_ca", action="store_true",
-                   help="Force le centrage q-q̄ à la CA à l'inférence (test sans retrain)")
     p.add_argument("--max_len", type=int, default=256)
     p.add_argument("--out_dir", default=None)
     return p
