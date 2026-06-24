@@ -149,54 +149,62 @@ def main(args):
                                    collate_fn=fusion_collate, num_workers=args.num_workers)
     train_loader, val_loader, test_loader = dl(train_set, True), dl(val_set, False), dl(test_set, False)
 
-    # ── Modèle ────────────────────────────────────────────────────────
-    lit = LitFusionQFormer(
-        n_labels=len(label_cols), pad_id=pad_id, n_layers=args.n_layers,
-        text_feature_mode=args.text_feature_mode,
-        norm=args.norm, radio_only=args.radio_only,
-        attn_pooled_head=args.attn_pooled_head,
-        text_dropout=args.text_dropout, lr=args.lr,
-        epochs=args.epochs, unfreeze_at=args.unfreeze_at,
-    )
+    # ── Modèle : entraînement, OU rechargement pour éval-seule ────────
+    if args.eval_ckpt:
+        # Recharge un checkpoint (hparams restaurés) et saute l'entraînement →
+        # AUC test sur le meilleur modèle déjà sauvegardé (ex. après un scancel).
+        lit = LitFusionQFormer.load_from_checkpoint(args.eval_ckpt)
+        print(f"Éval seule : {args.eval_ckpt} (pas d'entraînement)")
+    else:
+        lit = LitFusionQFormer(
+            n_labels=len(label_cols), pad_id=pad_id, n_layers=args.n_layers,
+            text_feature_mode=args.text_feature_mode,
+            norm=args.norm, radio_only=args.radio_only,
+            attn_pooled_head=args.attn_pooled_head,
+            text_dropout=args.text_dropout, lr=args.lr,
+            epochs=args.epochs, unfreeze_at=args.unfreeze_at,
+        )
 
-    # Tag de variante → checkpoints distincts (n'écrase pas les runs post-norm).
-    tag = f"qformer_{args.mode}_{args.text_feature_mode}_{args.norm}"
-    if args.radio_only:
-        tag += "_radio"
-    if args.attn_pooled_head:
-        tag += "_apool"
-    if args.text_dropout:
-        tag += f"_td{args.text_dropout:g}"
-    print(f"Variante : norm={args.norm} | radio_only={args.radio_only} | "
-          f"attn_pooled_head={args.attn_pooled_head} | "
-          f"text_dropout={args.text_dropout} → ckpt '{tag}'")
+        # Tag de variante → checkpoints distincts (n'écrase pas les runs post-norm).
+        tag = f"qformer_{args.mode}_{args.text_feature_mode}_{args.norm}"
+        if args.radio_only:
+            tag += "_radio"
+        if args.attn_pooled_head:
+            tag += "_apool"
+        if args.text_dropout:
+            tag += f"_td{args.text_dropout:g}"
+        print(f"Variante : norm={args.norm} | radio_only={args.radio_only} | "
+              f"attn_pooled_head={args.attn_pooled_head} | "
+              f"text_dropout={args.text_dropout} → ckpt '{tag}'")
 
-    ckpt_cb = pl.callbacks.ModelCheckpoint(
-        dirpath=CKPT_DIR, filename=tag,
-        monitor="val_auc", mode="max", save_top_k=1)
-    early_cb = pl.callbacks.EarlyStopping("val_auc", patience=args.patience, mode="max")
+        ckpt_cb = pl.callbacks.ModelCheckpoint(
+            dirpath=CKPT_DIR, filename=tag,
+            monitor="val_auc", mode="max", save_top_k=1)
+        early_cb = pl.callbacks.EarlyStopping("val_auc", patience=args.patience, mode="max")
 
-    trainer = pl.Trainer(
-        max_epochs=args.epochs,
-        accelerator="auto",
-        callbacks=[ckpt_cb, early_cb],
-        num_sanity_val_steps=0,
-        logger=False,
-        enable_progress_bar=False,   # batch SLURM : la barre \r pollue le .out
-        overfit_batches=args.overfit_batches,
-    )
-    trainer.fit(lit, train_loader, val_loader)
+        trainer = pl.Trainer(
+            max_epochs=args.epochs,
+            accelerator="auto",
+            callbacks=[ckpt_cb, early_cb],
+            num_sanity_val_steps=0,
+            logger=False,
+            enable_progress_bar=False,   # batch SLURM : la barre \r pollue le .out
+            overfit_batches=args.overfit_batches,
+        )
+        trainer.fit(lit, train_loader, val_loader)
 
-    if args.overfit_batches:   # sanity check : pas d'évaluation test
-        print("=> Sanity overfit terminé.")
-        return
+        if args.overfit_batches:   # sanity check : pas d'évaluation test
+            print("=> Sanity overfit terminé.")
+            return
+
+        # Recharge le meilleur checkpoint (val_auc) avant l'éval test.
+        if ckpt_cb.best_model_path:
+            best = torch.load(ckpt_cb.best_model_path, weights_only=False)
+            lit.load_state_dict(best["state_dict"])
 
     # ── Évaluation sur le TEST tenu à l'écart ─────────────────────────
-    if ckpt_cb.best_model_path:
-        best = torch.load(ckpt_cb.best_model_path, weights_only=False)
-        lit.load_state_dict(best["state_dict"])
-    lit.eval()
-    device = lit.device
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    lit.to(device).eval()
 
     @torch.no_grad()
     def collect(loader):
@@ -237,6 +245,8 @@ def build_argparser():
     p.add_argument("--csv", default=DEFAULT_CSV,
                    help="CSV image-level pairé (défaut data/shared/dataset_labeled_major.csv)")
     p.add_argument("--image_dir", required=True, help="Répertoire des PNG (ex. /content/Png)")
+    p.add_argument("--eval_ckpt", default=None,
+                   help="Recharge ce checkpoint et calcule l'AUC test SANS entraîner")
     p.add_argument("--mode", type=int, default=14, choices=[5, 14, 21],
                    help="Jeu de labels (défaut 14 NIH)")
     p.add_argument("--n_layers", type=int, default=3, help="Nombre de blocs Q-Former (2-4)")
