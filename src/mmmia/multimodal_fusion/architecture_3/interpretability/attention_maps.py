@@ -70,6 +70,7 @@ def load_model(ckpt_path, device):
         text_feature_mode=hp.get("text_feature_mode", "last"),
         norm=hp.get("norm", "post"),
         radio_only=hp.get("radio_only", False),
+        attn_pooled_head=hp.get("attn_pooled_head", False),
         freeze_text=True, freeze_image=True,
     ).to(device)
 

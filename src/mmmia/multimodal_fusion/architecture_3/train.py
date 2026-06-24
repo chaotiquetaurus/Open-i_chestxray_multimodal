@@ -42,14 +42,15 @@ os.makedirs(CKPT_DIR, exist_ok=True)
 
 class LitFusionQFormer(pl.LightningModule):
     def __init__(self, n_labels, pad_id, n_layers=3, text_feature_mode="last",
-                 norm="post", radio_only=False, text_dropout=0.0,
-                 lr=2e-4, epochs=30, unfreeze_at=None):
+                 norm="post", radio_only=False, attn_pooled_head=False,
+                 text_dropout=0.0, lr=2e-4, epochs=30, unfreeze_at=None):
         super().__init__()
         self.save_hyperparameters()
         self.model = FusionQFormer(
             n_labels=n_labels, n_layers=n_layers, pad_id=pad_id,
             text_feature_mode=text_feature_mode,
-            norm=norm, radio_only=radio_only, text_dropout=text_dropout,
+            norm=norm, radio_only=radio_only, attn_pooled_head=attn_pooled_head,
+            text_dropout=text_dropout,
             freeze_text=True, freeze_image=True,
         )
         self.loss_fn = AsymmetricLoss()
@@ -153,6 +154,7 @@ def main(args):
         n_labels=len(label_cols), pad_id=pad_id, n_layers=args.n_layers,
         text_feature_mode=args.text_feature_mode,
         norm=args.norm, radio_only=args.radio_only,
+        attn_pooled_head=args.attn_pooled_head,
         text_dropout=args.text_dropout, lr=args.lr,
         epochs=args.epochs, unfreeze_at=args.unfreeze_at,
     )
@@ -161,9 +163,12 @@ def main(args):
     tag = f"qformer_{args.mode}_{args.text_feature_mode}_{args.norm}"
     if args.radio_only:
         tag += "_radio"
+    if args.attn_pooled_head:
+        tag += "_apool"
     if args.text_dropout:
         tag += f"_td{args.text_dropout:g}"
     print(f"Variante : norm={args.norm} | radio_only={args.radio_only} | "
+          f"attn_pooled_head={args.attn_pooled_head} | "
           f"text_dropout={args.text_dropout} → ckpt '{tag}'")
 
     ckpt_cb = pl.callbacks.ModelCheckpoint(
@@ -241,6 +246,8 @@ def build_argparser():
                    help="'post' (défaut, historique) ou 'pre' (anti-collapse des requêtes)")
     p.add_argument("--radio_only", action="store_true",
                    help="Image-seul : aucune entrée texte → force la voie image à localiser")
+    p.add_argument("--attn_pooled_head", action="store_true",
+                   help="logit_j = w_j·Σα_j·V(z) : met la cross-attention dans la loss")
     p.add_argument("--text_dropout", type=float, default=0.0,
                    help="Modality dropout texte : proba de masquer tout le texte d'un échantillon")
     p.add_argument("--unfreeze_at", type=int, default=None,

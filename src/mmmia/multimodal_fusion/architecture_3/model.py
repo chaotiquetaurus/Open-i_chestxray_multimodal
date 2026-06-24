@@ -109,10 +109,12 @@ class QFormerHead(nn.Module):
     """N blocs JointQueryBlock + tête label-alignée (1 query par pathologie)."""
 
     def __init__(self, n_query=14, d=768, n_layers=3, n_labels=14,
-                 n_heads=12, d_ff=3072, dropout=0.1, norm="post"):
+                 n_heads=12, d_ff=3072, dropout=0.1, norm="post",
+                 attn_pooled_head=False):
         super().__init__()
         assert n_query == n_labels, "label-aligné : une query par pathologie"
         self.norm = norm
+        self.attn_pooled_head = attn_pooled_head
         self.queries = nn.Parameter(torch.randn(1, n_query, d) * 0.02)
         self.blocks = nn.ModuleList(
             [JointQueryBlock(d, n_heads, d_ff, dropout, norm=norm) for _ in range(n_layers)]
@@ -120,6 +122,13 @@ class QFormerHead(nn.Module):
         # Pré-norm : la sortie du dernier bloc n'est pas normalisée → LN final
         # avant la tête (échelle stable). Inutile en post-norm (déjà normalisé).
         self.final_ln = nn.LayerNorm(d) if norm == "pre" else None
+        # Tête attention-pooled : une cross-attention FINALE requête→image produit
+        # v_j = Σ_p α_{j,p} V(z_p) ; le logit lit v_j (pas le contenu H_j). Ainsi
+        # une carte α_j fausse → v_j faux → loss pénalise : l'attention EST dans le
+        # chemin du gradient (la carte est causalement liée à la prédiction).
+        self.pool_attn = (nn.MultiheadAttention(d, n_heads, dropout=dropout,
+                                                batch_first=True)
+                          if attn_pooled_head else None)
         self.W = nn.Parameter(torch.randn(n_labels, d) * 0.02)   # (14, d)
         self.b = nn.Parameter(torch.zeros(n_labels))             # (14,)
 
@@ -141,8 +150,16 @@ class QFormerHead(nn.Module):
             ca_all.append(ca_w)
         if self.final_ln is not None:
             q = self.final_ln(q)
-        # lecture diagonale : logit_j = w_j · H_j + b_j   (ici q joue le rôle de H)
-        logits = (q * self.W.unsqueeze(0)).sum(-1) + self.b   # (B, 14)
+
+        if self.attn_pooled_head:
+            # v_j = Σ_p α_{j,p} V(z_p) : le logit ne lit QUE l'image attendue.
+            v, pool_w = self.pool_attn(q, Z, Z, need_weights=return_attn)  # (B,14,d),(B,14,Nv)
+            ca_all.append(pool_w)            # carte décisive → aux["ca"][-1]
+            read = v
+        else:
+            read = q                         # tête diagonale historique (lit H_j)
+        # logit_j = w_j · read_j + b_j
+        logits = (read * self.W.unsqueeze(0)).sum(-1) + self.b   # (B, 14)
         return logits, {"sa": sa_all, "ca": ca_all, "queries": q}
 
 
@@ -165,6 +182,7 @@ class FusionQFormer(nn.Module):
         text_feature_mode="last",       # "last" | "deep"
         norm="post",                    # "post" (historique) | "pre" (anti-collapse)
         radio_only=False,               # image-seul : aucune entrée texte (force la voie image)
+        attn_pooled_head=False,         # logit = w_j·Σα_j·V(z) (l'attention dans la loss)
         text_dropout=0.0,               # masquage de modalité texte (proba/échantillon)
         freeze_text=True,
         freeze_image=True,
@@ -209,6 +227,7 @@ class FusionQFormer(nn.Module):
         self.qformer = QFormerHead(
             n_query=n_labels, d=d, n_layers=n_layers, n_labels=n_labels,
             n_heads=n_heads, d_ff=d_ff, dropout=dropout, norm=norm,
+            attn_pooled_head=attn_pooled_head,
         )
 
         if freeze_text:
