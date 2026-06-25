@@ -1,0 +1,73 @@
+=== Job 861913 sur node45 à Tue Jun 23 23:07:01 CEST 2026 ===
+mode=14 | labels=major | text_mode=last | image_dir=/home/infres/hhennion-25/data/Png
+Tesla P100-PCIE-16GB, 16384 MiB
+CUDA: True
+=== python train.py --csv /home/infres/hhennion-25/MM-MIA/data/shared/dataset_labeled_major.csv --image_dir /home/infres/hhennion-25/data/Png --mode 14 --text_feature_mode last --norm pre --reinject_identity --text_dropout 0.3 ===
+CSV     : /home/infres/hhennion-25/MM-MIA/data/shared/dataset_labeled_major.csv
+Mode    : 14 | 6473 images | 14 labels
+Labels  : ['Atelectasis', 'Cardiomegaly', 'Effusion', 'Infiltration', 'Mass', 'Nodule', 'Pneumonia', 'Pneumothorax', 'Consolidation', 'Edema', 'Emphysema', 'Fibrosis', 'Pleural_Thickening', 'Hernia']
+Train   : 4536 | Val : 986 | Test : 951 (split groupé sans fuite)
+Variante : norm=pre | reinject=True | text_dropout=0.3 → ckpt 'qformer_14_last_pre_reinj_td0.3'
+┏━━━┳━━━━━━━━━┳━━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━┳━━━━━━━┓
+┃   ┃ Name    ┃ Type           ┃ Params ┃ Mode  ┃ FLOPs ┃
+┡━━━╇━━━━━━━━━╇━━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━╇━━━━━━━┩
+│ 0 │ model   │ FusionQFormer  │  223 M │ train │     0 │
+│ 1 │ loss_fn │ AsymmetricLoss │      0 │ train │     0 │
+└───┴─────────┴────────────────┴────────┴───────┴───────┘
+Trainable params: 28.4 M                                                        
+Non-trainable params: 195 M                                                     
+Total params: 223 M                                                             
+Total estimated model params size (MB): 895                                     
+Modules in train mode: 41                                                       
+Modules in eval mode: 449                                                       
+Total FLOPs: 0                                                                  
+  Epoch 1: 28,389,134 trainable params
+  Epoch  1 | train_loss=nan | val_loss=0.0142 | val_auc=0.8808
+  Epoch 2: 28,389,134 trainable params
+  Epoch  2 | train_loss=0.0206 | val_loss=0.0087 | val_auc=0.9569
+  Epoch 3: 28,389,134 trainable params
+  Epoch  3 | train_loss=0.0131 | val_loss=0.0081 | val_auc=0.9727
+  Epoch 4: 28,389,134 trainable params
+  Epoch  4 | train_loss=0.0105 | val_loss=0.0077 | val_auc=0.9819
+  Epoch 5: 28,389,134 trainable params
+  Epoch  5 | train_loss=0.0092 | val_loss=0.0064 | val_auc=0.9760
+  Epoch 6: 28,389,134 trainable params
+  Epoch  6 | train_loss=0.0090 | val_loss=0.0064 | val_auc=0.9729
+  Epoch 7: 28,389,134 trainable params
+  Epoch  7 | train_loss=0.0080 | val_loss=0.0078 | val_auc=0.9670
+  Epoch 8: 28,389,134 trainable params
+  Epoch  8 | train_loss=0.0073 | val_loss=0.0074 | val_auc=0.9411
+  Epoch 9: 28,389,134 trainable params
+  Epoch  9 | train_loss=0.0074 | val_loss=0.0087 | val_auc=0.9656
+  Epoch 10: 28,389,134 trainable params
+  Epoch 10 | train_loss=0.0069 | val_loss=0.0086 | val_auc=0.9547
+  Epoch 11: 28,389,134 trainable params
+  Epoch 11 | train_loss=0.0060 | val_loss=0.0077 | val_auc=0.9577
+
+====================================================
+  Q-Former [14|last] — TEST — seuil=0.50
+====================================================
+  F1 macro  : 0.5350
+  F1 micro  : 0.6326
+  AUC macro : 0.9795
+  AUC micro : 0.9809
+  Hamming   : 0.0286
+
+-- AUC par label --
+  Mass                   0.9989  ###################
+  Cardiomegaly           0.9969  ###################
+  Pleural_Thickening     0.9963  ###################
+  Nodule                 0.9957  ###################
+  Effusion               0.9931  ###################
+  Fibrosis               0.9926  ###################
+  Pneumothorax           0.9892  ###################
+  Atelectasis            0.9889  ###################
+  Emphysema              0.9875  ###################
+  Infiltration           0.9850  ###################
+  Edema                  0.9845  ###################
+  Hernia                 0.9474  ##################
+  Consolidation          0.9314  ##################
+  Pneumonia              0.9252  ##################
+
+=> Checkpoint : /home/infres/hhennion-25/MM-MIA/src/mmmia/multimodal_fusion/architecture_3/checkpoints/qformer_14_last_pre_reinj_td0.3.ckpt
+=== Terminé à Wed Jun 24 00:08:56 CEST 2026 — checkpoint dans /home/infres/hhennion-25/MM-MIA/src/mmmia/multimodal_fusion/architecture_3/checkpoints/ ===

@@ -1,0 +1,28 @@
+[rank: 0] Seed set to 42
+Loading weights:   0%|          | 0/208 [00:00<?, ?it/s]Loading weights:  45%|████▌     | 94/208 [00:00<00:00, 924.76it/s]Loading weights:  90%|████████▉ | 187/208 [00:00<00:00, 811.14it/s]Loading weights: 100%|██████████| 208/208 [00:00<00:00, 866.46it/s]
+[1mCXRBertModel LOAD REPORT[0m from: microsoft/BiomedVLP-CXR-BERT-specialized
+Key                          | Status     |  | 
+-----------------------------+------------+--+-
+bert.embeddings.position_ids | UNEXPECTED |  | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+Loading weights:   0%|          | 0/198 [00:00<?, ?it/s]Loading weights:  41%|████      | 81/198 [00:00<00:00, 749.59it/s]Loading weights:  82%|████████▏ | 162/198 [00:00<00:00, 755.47it/s]Loading weights: 100%|██████████| 198/198 [00:00<00:00, 824.01it/s]
+[1mViTModel LOAD REPORT[0m from: codewithdark/vit-chest-xray
+Key                 | Status     | 
+--------------------+------------+-
+classifier.bias     | UNEXPECTED | 
+classifier.weight   | UNEXPECTED | 
+pooler.dense.bias   | MISSING    | 
+pooler.dense.weight | MISSING    | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+GPU available: True (cuda), used: True
+TPU available: False, using: 0 TPU cores
+💡 Tip: For seamless cloud logging and experiment tracking, try installing [litlogger](https://pypi.org/project/litlogger/) to enable LitLogger, which logs metrics and artifacts automatically to the Lightning Experiments platform.
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
+SLURM auto-requeueing enabled. Setting signal handlers.
+/home/infres/hhennion-25/envs/artishow/lib64/python3.12/site-packages/pytorch_lightning/loops/fit_loop.py:534: Found 452 module(s) in eval mode at the start of training. This may lead to unexpected behavior during training. If this is intentional, you can ignore this warning.
+`use_return_dict` is deprecated! Use `return_dict` instead!
