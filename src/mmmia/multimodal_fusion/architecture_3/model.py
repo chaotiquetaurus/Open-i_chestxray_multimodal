@@ -26,6 +26,7 @@ Branchement texte (text_feature_mode) :
 
 import os
 import sys
+import contextlib
 
 import torch
 import torch.nn as nn
@@ -58,6 +59,24 @@ def build_cxr_tokenizer(max_len: int = 256):
     return tok, pad_id
 
 
+class DiagHead(nn.Module):
+    """Tête diagonale label-alignée : logit_j = w_j·q_j + b_j (une query par label).
+
+    Utilisée pour les classifieurs unimodaux CGGM (texte-seul / image-seul). On
+    garde la même forme que la tête de fusion (W : n_labels×d) pour que la
+    modulation de DIRECTION puisse comparer leurs directions de poids :
+    cos(w_fusion, w_modalité) ≈ alignement des gradients (cf. CGGM §direction).
+    """
+
+    def __init__(self, n_labels, d):
+        super().__init__()
+        self.W = nn.Parameter(torch.randn(n_labels, d) * 0.02)
+        self.b = nn.Parameter(torch.zeros(n_labels))
+
+    def forward(self, q):                       # q : (B, n_labels, d)
+        return (q * self.W.unsqueeze(0)).sum(-1) + self.b
+
+
 class JointQueryBlock(nn.Module):
     """Un bloc Q-Former : SA([Q;T]) → CA(Q→Z) → FFN, chacune résiduelle + LN."""
 
@@ -70,7 +89,10 @@ class JointQueryBlock(nn.Module):
         self.ffn = nn.Sequential(nn.Linear(d, d_ff), nn.GELU(), nn.Linear(d_ff, d))
         self.ln1, self.ln2, self.ln3 = nn.LayerNorm(d), nn.LayerNorm(d), nn.LayerNorm(d)
 
-    def forward(self, q, T, Z, txt_pad=None, return_attn=False):
+    def forward(self, q, T, Z, txt_pad=None, return_attn=False, use_image=True):
+        # `T is None`   → voie image-seule (pas de texte dans la SA).
+        # `use_image=F` → voie texte-seule (on saute la cross-attention image).
+        # Ces deux drapeaux servent aux passes unimodales CGGM (encode_queries).
         B, n = q.size(0), q.size(1)
 
         # key_padding_mask pour la SA sur [Q; T] : True = ignoré (inverse HuggingFace).
@@ -81,6 +103,7 @@ class JointQueryBlock(nn.Module):
                 [torch.zeros(B, n, dtype=torch.bool, device=q.device), txt_pad], dim=1
             )
 
+        ca_w = None
         if self.norm == "pre":
             # Pré-norm : le résidu q traverse HORS du LN → l'identité des requêtes
             # persiste en profondeur.
@@ -89,8 +112,9 @@ class JointQueryBlock(nn.Module):
             h, sa_w = self.self_attn(qn, ctx, ctx, key_padding_mask=kpm,
                                      need_weights=return_attn)
             q = q + h
-            h, ca_w = self.cross_attn(self.ln2(q), Z, Z, need_weights=return_attn)
-            q = q + h
+            if use_image:
+                h, ca_w = self.cross_attn(self.ln2(q), Z, Z, need_weights=return_attn)
+                q = q + h
             q = q + self.ffn(self.ln3(q))
         else:
             # Post-norm (LN après le résidu).
@@ -98,8 +122,9 @@ class JointQueryBlock(nn.Module):
             h, sa_w = self.self_attn(q, ctx, ctx, key_padding_mask=kpm,
                                      need_weights=return_attn)
             q = self.ln1(q + h)
-            h, ca_w = self.cross_attn(q, Z, Z, need_weights=return_attn)
-            q = self.ln2(q + h)
+            if use_image:
+                h, ca_w = self.cross_attn(q, Z, Z, need_weights=return_attn)
+                q = self.ln2(q + h)
             q = self.ln3(q + self.ffn(q))
 
         return q, sa_w, ca_w
@@ -132,9 +157,8 @@ class QFormerHead(nn.Module):
         self.W = nn.Parameter(torch.randn(n_labels, d) * 0.02)   # (14, d)
         self.b = nn.Parameter(torch.zeros(n_labels))             # (14,)
 
-    def forward(self, T, Z, txt_pad=None, return_attn=False):
-        """T : tenseur (B, L, d), liste de N tenseurs (deep), ou None (radio_only).
-        Z : (B, Nv, d). Le batch B vient de Z (toujours présent)."""
+    def _run_blocks(self, T, Z, txt_pad=None, return_attn=False, use_image=True):
+        """Enchaîne les N blocs et renvoie (q, sa_all, ca_all) avant la tête."""
         B = Z.size(0)
         is_per_layer = isinstance(T, (list, tuple))
         if is_per_layer:
@@ -145,11 +169,26 @@ class QFormerHead(nn.Module):
         sa_all, ca_all = [], []
         for i, blk in enumerate(self.blocks):
             T_i = T[i] if is_per_layer else T                 # None si radio_only
-            q, sa_w, ca_w = blk(q, T_i, Z, txt_pad, return_attn)   # q : (B, 14, d)
+            q, sa_w, ca_w = blk(q, T_i, Z, txt_pad, return_attn, use_image=use_image)
             sa_all.append(sa_w)
             ca_all.append(ca_w)
         if self.final_ln is not None:
             q = self.final_ln(q)
+        return q, sa_all, ca_all
+
+    def encode_queries(self, T, Z, txt_pad=None, drop_text=False, drop_image=False):
+        """Reps unimodales CGGM (sans tête) : texte-seul (`drop_image`) ou
+        image-seul (`drop_text`). Réutilise T/Z déjà encodés (encodeurs gelés)."""
+        T_eff = None if drop_text else T
+        pad_eff = None if drop_text else txt_pad
+        q, _, _ = self._run_blocks(T_eff, Z, pad_eff, use_image=not drop_image)
+        return q
+
+    def forward(self, T, Z, txt_pad=None, return_attn=False):
+        """T : tenseur (B, L, d), liste de N tenseurs (deep), ou None (radio_only).
+        Z : (B, Nv, d). Le batch B vient de Z (toujours présent)."""
+        q, sa_all, ca_all = self._run_blocks(T, Z, txt_pad, return_attn=return_attn,
+                                             use_image=True)
 
         if self.attn_pooled_head:
             # v_j = Σ_p α_{j,p} V(z_p) : le logit ne lit QUE l'image attendue.
@@ -184,6 +223,7 @@ class FusionQFormer(nn.Module):
         radio_only=False,               # image-seul : aucune entrée texte (force la voie image)
         attn_pooled_head=False,         # logit = w_j·Σα_j·V(z) (l'attention dans la loss)
         text_dropout=0.0,               # masquage de modalité texte (proba/échantillon)
+        cggm=False,                     # têtes unimodales pour la modulation CGGM (direction)
         freeze_text=True,
         freeze_image=True,
         text_name=CXR_BERT_NAME,
@@ -230,6 +270,16 @@ class FusionQFormer(nn.Module):
             attn_pooled_head=attn_pooled_head,
         )
 
+        # ── Têtes unimodales CGGM (créées seulement si cggm) ─────────────────
+        # Elles lisent les requêtes des passes texte-seule / image-seule. Servent
+        # à (1) mesurer Δaccuracy par modalité → coeff, (2) fournir une direction
+        # de poids comparée à la tête de fusion (terme de direction l_gm).
+        self.cggm = cggm
+        if cggm:
+            assert not radio_only, "CGGM nécessite la voie texte (incompatible radio_only)"
+            self.head_txt = DiagHead(n_labels, d)
+            self.head_img = DiagHead(n_labels, d)
+
         if freeze_text:
             self.set_text_trainable(False)
         if freeze_image:
@@ -252,33 +302,57 @@ class FusionQFormer(nn.Module):
         self.set_text_trainable(True)
         self.set_image_trainable(True)
 
-    # ── Forward ──────────────────────────────────────────────────────────
-    def forward(self, ids, pixel_values, return_attn=False):
+    # ── Encodage (encodeurs gelés, exécutés une seule fois) ───────────────
+    def _encode(self, ids, pixel_values):
+        """Renvoie (T, Z, txt_pad). T : (B,L,d) | liste (deep) | None (radio_only)."""
         Z = self.image_encoder(pixel_values=pixel_values).last_hidden_state  # (B,197,d)
 
         if self.radio_only:
             # Image-seul : aucune entrée texte (T=None → SA sur les queries seules).
-            T, txt_pad = None, None
-        else:
-            mask = (ids != self.pad_id).long()                   # 1 = vrai token
-            txt_pad = (ids == self.pad_id)                       # True = ignoré (MHA)
+            return None, Z, None
 
-            # Modality dropout (ModDrop, Neverova et al. 2016) : à l'entraînement,
-            # avec proba text_dropout, masque TOUT le texte d'un échantillon → la
-            # voie image doit suffire. Casse l'unimodal bias (« lire le rapport »).
-            # Pas de NaN : chaque requête voit toujours les n requêtes dans la SA.
-            if self.training and self.text_dropout > 0:
-                drop = torch.rand(ids.size(0), device=ids.device) < self.text_dropout
-                txt_pad = txt_pad | drop.unsqueeze(1)            # (B,1) broadcast → (B,L)
+        mask = (ids != self.pad_id).long()                   # 1 = vrai token
+        txt_pad = (ids == self.pad_id)                       # True = ignoré (MHA)
 
-            need_hidden = self.text_feature_mode == "deep"
-            out = self.text_encoder(
-                input_ids=ids, attention_mask=mask, output_hidden_states=need_hidden
-            )
-            T = ([out.hidden_states[i] for i in self.layer_map] if need_hidden
-                 else out.last_hidden_state)                     # liste (deep) ou (B,L,d)
+        # Modality dropout (ModDrop, Neverova et al. 2016) : à l'entraînement,
+        # avec proba text_dropout, masque TOUT le texte d'un échantillon → la
+        # voie image doit suffire. Casse l'unimodal bias (« lire le rapport »).
+        # Pas de NaN : chaque requête voit toujours les n requêtes dans la SA.
+        if self.training and self.text_dropout > 0:
+            drop = torch.rand(ids.size(0), device=ids.device) < self.text_dropout
+            txt_pad = txt_pad | drop.unsqueeze(1)            # (B,1) broadcast → (B,L)
 
+        need_hidden = self.text_feature_mode == "deep"
+        out = self.text_encoder(
+            input_ids=ids, attention_mask=mask, output_hidden_states=need_hidden
+        )
+        T = ([out.hidden_states[i] for i in self.layer_map] if need_hidden
+             else out.last_hidden_state)                     # liste (deep) ou (B,L,d)
+        return T, Z, txt_pad
+
+    # ── Forward ──────────────────────────────────────────────────────────
+    def forward(self, ids, pixel_values, return_attn=False):
+        T, Z, txt_pad = self._encode(ids, pixel_values)
         logits, aux = self.qformer(T, Z, txt_pad, return_attn=return_attn)
         if return_attn:
             return logits, aux
         return logits
+
+    def forward_cggm(self, ids, pixel_values, detach=True):
+        """Forward CGGM : logits fusion + logits unimodaux (texte-seul, image-seul).
+
+        Les encodeurs tournent UNE fois ; le Q-Former tourne 3× (fusion avec
+        graphe + 2 passes unimodales). Si `detach`, les reps unimodales sont
+        calculées sous `no_grad` → seules les têtes unimodales s'entraînent
+        (mesure pure ; backbone tiré par L_task + λ·l_gm). Sinon elles
+        rétro-propagent dans le Q-Former (supervision unimodale auxiliaire).
+        """
+        T, Z, txt_pad = self._encode(ids, pixel_values)
+        logits_fus, _ = self.qformer(T, Z, txt_pad)
+        ctx = torch.no_grad() if detach else contextlib.nullcontext()
+        with ctx:
+            q_txt = self.qformer.encode_queries(T, Z, txt_pad, drop_image=True)
+            q_img = self.qformer.encode_queries(T, Z, txt_pad, drop_text=True)
+        logit_txt = self.head_txt(q_txt)
+        logit_img = self.head_img(q_img)
+        return logits_fus, logit_txt, logit_img

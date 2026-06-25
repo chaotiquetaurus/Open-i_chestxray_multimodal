@@ -43,20 +43,33 @@ os.makedirs(CKPT_DIR, exist_ok=True)
 class LitFusionQFormer(pl.LightningModule):
     def __init__(self, n_labels, pad_id, n_layers=3, text_feature_mode="last",
                  norm="post", radio_only=False, attn_pooled_head=False,
-                 text_dropout=0.0, lr=2e-4, epochs=30, unfreeze_at=None):
+                 text_dropout=0.0, lr=2e-4, epochs=30, unfreeze_at=None,
+                 cggm=False, cggm_lambda=0.1, cggm_detach=True):
         super().__init__()
         self.save_hyperparameters()
         self.model = FusionQFormer(
             n_labels=n_labels, n_layers=n_layers, pad_id=pad_id,
             text_feature_mode=text_feature_mode,
             norm=norm, radio_only=radio_only, attn_pooled_head=attn_pooled_head,
-            text_dropout=text_dropout,
+            text_dropout=text_dropout, cggm=cggm,
             freeze_text=True, freeze_image=True,
         )
         self.loss_fn = AsymmetricLoss()
         self.val_probs, self.val_labels = [], []
-        self.history = {"train": [], "val": []}
+        self.history = {"train": [], "val": [], "cggm": []}
         self._train_losses, self._val_losses = [], []
+
+        # ── État CGGM (modulation de direction ; encodeurs gelés → pas de
+        #    modulation de magnitude). coeff_i = (Σ Δε − Δε_i)/Σ Δε, mis à jour
+        #    par epoch ; warm-up tant qu'on n'a pas deux epochs pour un diff.
+        self.cggm = cggm
+        self.cggm_lambda = cggm_lambda
+        self.cggm_detach = cggm_detach
+        self._coeff_txt, self._coeff_img = 0.0, 0.0
+        self._cggm_ready = False
+        self._prev_acc = None
+        self._uni_acc_txt, self._uni_acc_img, self._uni_n = 0.0, 0.0, 0
+        self._head_gn = {"txt": [], "img": [], "fus": []}
 
     def forward(self, ids, pixel_values):
         return self.model(ids, pixel_values)
@@ -72,14 +85,94 @@ class LitFusionQFormer(pl.LightningModule):
 
     def training_step(self, batch, _):
         ids, px, lab = batch
-        loss = self.loss_fn(self(ids, px), lab)
+        if self.cggm:
+            logits, logit_txt, logit_img = self.model.forward_cggm(
+                ids, px, detach=self.cggm_detach)
+            # L_task (fusion) + supervision unimodale (entraîne les têtes ; le
+            # backbone aussi si --no-cggm_detach) + terme de direction l_gm.
+            loss = (self.loss_fn(logits, lab)
+                    + self.loss_fn(logit_txt, lab)
+                    + self.loss_fn(logit_img, lab))
+            if self._cggm_ready:
+                loss = loss + self.cggm_lambda * self._l_gm()
+            with torch.no_grad():
+                self._accum_uni_acc(logit_txt, logit_img, lab)
+        else:
+            loss = self.loss_fn(self(ids, px), lab)
         self._train_losses.append(loss.detach())
         self.log("train_loss", loss, prog_bar=True)
         return loss
 
+    # ── CGGM : direction (l_gm) + accuracy unimodale → coeff ────────────────
+    def _l_gm(self):
+        """l_gm = (Σ|c_i| − Σ c_i·cos(w_F, w_i)) / M  (M=2). Minimiser tire la
+        direction de la tête de fusion vers les têtes unimodales, pondéré par les
+        coeff (modalité qui stagne → c_i grand → forte traction)."""
+        wF = self.model.qformer.W.flatten()
+        wT = self.model.head_txt.W.flatten()
+        wI = self.model.head_img.W.flatten()
+        cos = torch.nn.functional.cosine_similarity
+        cT, cI = self._coeff_txt, self._coeff_img
+        sim = cT * cos(wF, wT, dim=0) + cI * cos(wF, wI, dim=0)
+        return (abs(cT) + abs(cI) - sim) / 2.0
+
+    @torch.no_grad()
+    def _accum_uni_acc(self, logit_txt, logit_img, lab):
+        pt = (logit_txt.sigmoid() > 0.5).float()
+        pi = (logit_img.sigmoid() > 0.5).float()
+        n = lab.size(0)
+        self._uni_acc_txt += (pt == lab).float().mean().item() * n
+        self._uni_acc_img += (pi == lab).float().mean().item() * n
+        self._uni_n += n
+
+    @torch.no_grad()
+    def _cos_now(self, which):
+        wF = self.model.qformer.W.flatten()
+        head = self.model.head_txt if which == "txt" else self.model.head_img
+        return torch.nn.functional.cosine_similarity(wF, head.W.flatten(), dim=0).item()
+
+    def on_after_backward(self):
+        if not self.cggm:
+            return
+        gn = lambda p: p.grad.norm().item() if p.grad is not None else 0.0
+        self._head_gn["fus"].append(gn(self.model.qformer.W))
+        self._head_gn["txt"].append(gn(self.model.head_txt.W))
+        self._head_gn["img"].append(gn(self.model.head_img.W))
+
     def on_train_epoch_end(self):
         self.history["train"].append(torch.stack(self._train_losses).mean().item())
         self._train_losses.clear()
+        if self.cggm and self._uni_n > 0:
+            self._update_cggm_coeff()
+
+    def _update_cggm_coeff(self):
+        """Fin d'epoch : Δaccuracy unimodale → nouveaux coeff (pour l'epoch
+        suivante) + enregistrement des stats pour la figure 3-panneaux."""
+        import numpy as _np
+        acc_t = self._uni_acc_txt / self._uni_n
+        acc_i = self._uni_acc_img / self._uni_n
+        if self._prev_acc is not None:
+            dT = acc_t - self._prev_acc[0]
+            dI = acc_i - self._prev_acc[1]
+            s = dT + dI + 1e-8                       # ← l'unique epsilon (anti /0)
+            clamp = lambda x: float(min(max(x, 0.0), 2.0))   # anti sign-flip
+            self._coeff_txt = clamp((s - dT) / s)
+            self._coeff_img = clamp((s - dI) / s)
+            self._cggm_ready = True
+        self._prev_acc = (acc_t, acc_i)
+        mean = lambda xs: float(_np.mean(xs)) if xs else 0.0
+        self.history["cggm"].append({
+            "epoch": self.current_epoch + 1,
+            "acc_txt": acc_t, "acc_img": acc_i,
+            "coeff_txt": self._coeff_txt, "coeff_img": self._coeff_img,
+            "gnorm_txt": mean(self._head_gn["txt"]),
+            "gnorm_img": mean(self._head_gn["img"]),
+            "gnorm_fus": mean(self._head_gn["fus"]),
+            "cos_txt": self._cos_now("txt"), "cos_img": self._cos_now("img"),
+        })
+        self._uni_acc_txt = self._uni_acc_img = 0.0
+        self._uni_n = 0
+        self._head_gn = {"txt": [], "img": [], "fus": []}
 
     def validation_step(self, batch, _):
         ids, px, lab = batch
@@ -137,8 +230,14 @@ def main(args):
     train_idx, val_idx, test_idx = grouped_train_val_test(
         build_groups(df), train=0.70, val=0.15)
 
+    # --no_findings : l'ENTRAÎNEMENT reste multimodal (indication+findings) ;
+    # val/test (donc sélection de checkpoint ET inférence) n'ont que l'indication.
+    eval_text_cols = ["indication"] if args.no_findings else None
+    if args.no_findings:
+        print("--no_findings : train=indication+findings | val/test=indication seul")
     train_ds = FusionDataset(df, label_cols, tok, args.image_dir, TRAIN_TF)
-    eval_full = FusionDataset(df, label_cols, tok, args.image_dir, VAL_TF)
+    eval_full = FusionDataset(df, label_cols, tok, args.image_dir, VAL_TF,
+                              text_cols=eval_text_cols)
     train_set = Subset(train_ds, train_idx)
     val_set = Subset(eval_full, val_idx)
     test_set = Subset(eval_full, test_idx)
@@ -163,6 +262,8 @@ def main(args):
             attn_pooled_head=args.attn_pooled_head,
             text_dropout=args.text_dropout, lr=args.lr,
             epochs=args.epochs, unfreeze_at=args.unfreeze_at,
+            cggm=args.cggm, cggm_lambda=args.cggm_lambda,
+            cggm_detach=args.cggm_detach,
         )
 
         # Tag de variante → checkpoints distincts (n'écrase pas les runs post-norm).
@@ -173,6 +274,10 @@ def main(args):
             tag += "_apool"
         if args.text_dropout:
             tag += f"_td{args.text_dropout:g}"
+        if args.cggm:
+            tag += "_cggm"
+        if args.no_findings:
+            tag += "_nofind"
         print(f"Variante : norm={args.norm} | radio_only={args.radio_only} | "
               f"attn_pooled_head={args.attn_pooled_head} | "
               f"text_dropout={args.text_dropout} → ckpt '{tag}'")
@@ -239,6 +344,23 @@ def main(args):
         print(f"  {name:22s} {auc:.4f}  {'#' * int(auc * 20)}")
     print(f"\n=> Checkpoint : {ckpt_cb.best_model_path}")
 
+    # ── CGGM : historique JSON + figure 3-panneaux (acc / magnitude / direction)
+    if not args.eval_ckpt and args.cggm and lit.history["cggm"]:
+        import json
+        res_dir = os.path.join(ROOT, "interpretability", "results", "cggm")
+        os.makedirs(res_dir, exist_ok=True)
+        hist_path = os.path.join(res_dir, f"{tag}.json")
+        with open(hist_path, "w") as f:
+            json.dump({k: lit.history[k] for k in ("cggm", "train", "val")}, f, indent=2)
+        print(f"=> Historique CGGM : {hist_path}")
+        try:
+            from interpretability.cggm_curves import plot_cggm_history
+            png = os.path.join(res_dir, f"{tag}.png")
+            plot_cggm_history(lit.history["cggm"], png)
+            print(f"=> Figure CGGM    : {png}")
+        except Exception as e:                       # matplotlib absent en batch, p.ex.
+            print(f"  (figure CGGM non générée : {e})")
+
 
 def build_argparser():
     p = argparse.ArgumentParser()
@@ -260,6 +382,15 @@ def build_argparser():
                    help="logit_j = w_j·Σα_j·V(z) : met la cross-attention dans la loss")
     p.add_argument("--text_dropout", type=float, default=0.0,
                    help="Modality dropout texte : proba de masquer tout le texte d'un échantillon")
+    p.add_argument("--cggm", action="store_true",
+                   help="CGGM : modulation de DIRECTION sur θ_F (encodeurs gelés → pas de magnitude)")
+    p.add_argument("--cggm_lambda", type=float, default=0.1,
+                   help="Poids du terme de direction l_gm (défaut 0.1)")
+    p.add_argument("--cggm_detach", action=argparse.BooleanOptionalAction, default=True,
+                   help="Détache les reps unimodales (têtes-seules, défaut). "
+                        "--no-cggm_detach : supervision unimodale propagée au backbone")
+    p.add_argument("--no_findings", action="store_true",
+                   help="Train=indication+findings ; val/test/inférence=indication seul")
     p.add_argument("--unfreeze_at", type=int, default=None,
                    help="Epoch (1-indexée) où dégeler les encodeurs ; défaut : jamais")
     p.add_argument("--batch_size", type=int, default=16)

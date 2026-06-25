@@ -78,9 +78,14 @@ def load_paired_df(csv_path) -> pd.DataFrame:
     return df
 
 
-def build_texts(df: pd.DataFrame) -> list[str]:
-    """Concatène indication + findings (entrée texte des modèles)."""
-    cols = [c for c in TEXT_COLS if c in df.columns]
+def build_texts(df: pd.DataFrame, text_cols=None) -> list[str]:
+    """Concatène les colonnes texte demandées (défaut : indication + findings).
+
+    `text_cols` permet de restreindre l'entrée texte — p.ex. `["indication"]`
+    pour une inférence/validation SANS findings (cf. `--no_findings`), alors que
+    l'entraînement garde indication+findings.
+    """
+    cols = [c for c in (text_cols or TEXT_COLS) if c in df.columns]
     return df[cols].fillna("").agg(" ".join, axis=1).str.strip().tolist()
 
 
@@ -102,15 +107,18 @@ class FusionDataset(Dataset):
         tokenizer  : tokenizer à interface `encode_batch` (HF backend ou tokenizers)
         image_dir  : répertoire des PNG
         transform  : transform torchvision appliqué à chaque image PIL
+        text_cols  : colonnes texte à encoder (défaut indication+findings) ; passer
+                     `["indication"]` pour un set d'éval sans findings.
     """
 
-    def __init__(self, df, label_cols, tokenizer, image_dir, transform=None):
+    def __init__(self, df, label_cols, tokenizer, image_dir, transform=None,
+                 text_cols=None):
         self.df = df.reset_index(drop=True)
         self.label_cols = label_cols
         self.image_dir = Path(image_dir)
         self.transform = transform
         # Encodage texte en batch à l'init (gain de temps).
-        self.enc = tokenizer.encode_batch(build_texts(self.df))
+        self.enc = tokenizer.encode_batch(build_texts(self.df, text_cols))
 
     def __len__(self) -> int:
         return len(self.df)
