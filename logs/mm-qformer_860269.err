@@ -1,0 +1,2 @@
+MANQUE: CSV '/home/infres/hhennion-25/MM-MIA/data/shared/dataset_labeled_major.csv'. Génère-le : python src/mmmia/text_classification/data/labeliser.py --labels major
+=> Préflight échoué : fournis les dépendances ci-dessus puis resoumets.

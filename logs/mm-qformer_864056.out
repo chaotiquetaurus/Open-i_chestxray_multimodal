@@ -1,0 +1,26 @@
+=== Job 864056 sur node16 à Thu Jun 25 17:24:47 CEST 2026 ===
+mode=14 | labels=major | text_mode=deep | image_dir=/home/infres/hhennion-25/data/Png
+Tesla P100-PCIE-16GB, 16384 MiB
+CUDA: True
+=== python train.py --csv /home/infres/hhennion-25/MM-MIA/data/shared/dataset_labeled_major.csv --image_dir /home/infres/hhennion-25/data/Png --mode 14 --text_feature_mode deep  ===
+CSV     : /home/infres/hhennion-25/MM-MIA/data/shared/dataset_labeled_major.csv
+Mode    : 14 | 6473 images | 14 labels
+Labels  : ['Atelectasis', 'Cardiomegaly', 'Effusion', 'Infiltration', 'Mass', 'Nodule', 'Pneumonia', 'Pneumothorax', 'Consolidation', 'Edema', 'Emphysema', 'Fibrosis', 'Pleural_Thickening', 'Hernia']
+Train   : 4536 | Val : 986 | Test : 951 (split groupé sans fuite)
+Variante : norm=post | radio_only=False | attn_pooled_head=False | text_dropout=0.0 → ckpt 'qformer_14_deep_post'
+┏━━━┳━━━━━━━━━┳━━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━┳━━━━━━━┓
+┃   ┃ Name    ┃ Type           ┃ Params ┃ Mode  ┃ FLOPs ┃
+┡━━━╇━━━━━━━━━╇━━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━╇━━━━━━━┩
+│ 0 │ model   │ FusionQFormer  │  223 M │ train │     0 │
+│ 1 │ loss_fn │ AsymmetricLoss │      0 │ train │     0 │
+└───┴─────────┴────────────────┴────────┴───────┴───────┘
+Trainable params: 28.4 M                                                        
+Non-trainable params: 195 M                                                     
+Total params: 223 M                                                             
+Total estimated model params size (MB): 895                                     
+Modules in train mode: 40                                                       
+Modules in eval mode: 449                                                       
+Total FLOPs: 0                                                                  
+  Epoch 1: 28,376,846 trainable params
+  Epoch  1 | train_loss=nan | val_loss=0.0085 | val_auc=0.9601
+  Epoch 2: 28,376,846 trainable params
